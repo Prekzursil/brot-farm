@@ -8,6 +8,7 @@ source =
     brot_farm
     topup
     scripts.version_assets
+    brot_build
 branch = True
 
 [report]

@@ -354,6 +354,13 @@ FRACS = [
     ),
 ]
 BY_NAME = {f["name"]: f for f in FRACS}
+# additive extension: user-authored maps (brot_build.py new ...)
+from usermaps import FRACS as _USER_FRACS  # noqa: E402
+
+FRACS += _USER_FRACS
+for _f in _USER_FRACS:
+    BY_NAME[_f["name"]] = _f
+
 CHAN_NAMES = ("blue", "green", "red")
 
 # ----------------------------------------------------------------- machinery

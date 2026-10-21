@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-build="5fdda3a5" lang="en">
+<html data-build="d3081f12" lang="en">
 <head>
 <script>
 /* error banner: works even if every other asset fails; shown only on error */
@@ -111,6 +111,35 @@ theater above.</p>
   <div class="hud" id="ex-hud">center −0.6 + 0i · scale 3.4 · zoom 1×</div>
 </div>
 
+<!-- ========================================================== BUILD SUITE -->
+<h2 class="reveal">5 &middot; Build your own map</h2>
+<p class="reveal">Compose an iteration rule from the operator grammar (identical semantics to
+<code>brot_build.py</code> on the Python side), watch the escape-time preview instantly, then
+register it into the Orbit theater and Developing room &mdash; or load a map authored with the
+Python build suite from the catalogue below.</p>
+<div class="panel reveal" id="build-panel">
+  <div class="controls">
+    <label>name <input type="text" id="bu-name" value="my_map" size="10" spellcheck="false"></label>
+    <label>family
+      <select id="bu-family"><option value="mutation">mutation: x&prime; = f(x&sup2;) &minus; y</option>
+      <option value="fold">fold: |&middot;| on Re z&sup2;&hellip;z&#8309;</option>
+      <option value="power">power: z&#8319; + c</option></select></label>
+    <label>f (real op) <select id="bu-real"></select></label>
+    <label>g (imag op) <select id="bu-imag"></select></label>
+    <label>power <select id="bu-power"><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+    <button class="btn primary" id="bu-register">register map</button>
+    <button class="btn" id="bu-compare">compare with theater map</button>
+  </div>
+  <div class="grid2">
+    <div><canvas id="bu-canvas" class="viz" width="300" height="300"></canvas>
+      <div class="hud" id="bu-hud">compose a rule &mdash; preview renders instantly</div></div>
+    <div><canvas id="bu-base" class="viz" width="300" height="300" style="opacity:.9"></canvas>
+      <div class="hud">comparison target: current Orbit-theater map</div></div>
+  </div>
+  <h3 style="margin-bottom:6px">Catalogue &mdash; maps authored with the Python build suite</h3>
+  <ul id="bu-catalogue" style="list-style:none;padding:0;display:flex;flex-direction:column;gap:10px"></ul>
+</div>
+
 <!-- ========================================================== SANDBOX IDEAS -->
 <h2 class="reveal">4 · Formulas worth typing</h2>
 <p class="reveal">The x′ / y′ boxes accept any JavaScript expression in <code>x</code>,
@@ -132,6 +161,7 @@ A few with known-good results:</p>
 <footer>
   Fractal Darkroom · MIT · all computation in your browser · <a href="index.html">back to the gallery →</a>
 </footer>
-<script src="assets/playground.js?v=941c824a"></script>
+<script src="assets/catalogue.js?v=x"></script>
+<script src="assets/playground.js?v=69bc5a6f"></script>
 </body>
 </html>

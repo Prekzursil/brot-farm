@@ -168,6 +168,24 @@ def check_page(pg, base: str, page_name: str, mobile: bool) -> None:
             "sent c" in (pg.text_content("#ex-hud") or ""),
             (pg.text_content("#ex-hud") or "")[-60:],
         )
+    if page_name == "playground.html" and not mobile:
+        # build-suite panel: preview paints, register adds the map, catalogue lists entries
+        record(lane, "build-preview", (pg.evaluate(CANVAS_LUM, "bu-canvas") or 0) > 1)
+        pg.evaluate(
+            "() => { document.getElementById('bu-real').value = 'tan';"
+            " document.getElementById('bu-real').dispatchEvent(new Event('change')); }"
+        )
+        pg.wait_for_timeout(200)
+        pg.click("#bu-register")
+        pg.wait_for_timeout(250)
+        registered = pg.evaluate(
+            "() => [...document.getElementById('ot-map').options].some(o => o.value === 'built_my_map')"
+        )
+        record(lane, "build-register", bool(registered))
+        n_cat = pg.evaluate(
+            "() => document.getElementById('bu-catalogue').children.length"
+        )
+        record(lane, "build-catalogue", n_cat > 0, f"{n_cat} entries")
     record(lane, "console-clean", not errors, "; ".join(errors[:3])[:180])
 
 

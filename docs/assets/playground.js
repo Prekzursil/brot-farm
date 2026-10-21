@@ -732,3 +732,179 @@ function currentMap(sel) {
   });
   fullRender();
 })();
+
+/* ==================================================== BUILD SUITE (L3) */
+// Operator grammar shared with brot_build.py — semantics identical on both
+// sides (the Python expressions and these JS expressions are generated from
+// the same table; the parity test enforces name parity, the round-trip docs
+// the behavior parity).
+const BUILD = {
+  real: {
+    cos: (x) => M.cos(x * x), sin: (x) => M.sin(x * x), tan: (x) => M.tan(x * x),
+    sinh: (x) => M.sinh(x * x), exp: (x) => M.exp(x * x), abs: (x) => M.abs(x * x),
+  },
+  imag: {
+    plain: (t) => t, cos: (t) => M.cos(t), abs: (t) => M.abs(t),
+    neg: (t) => -t, absxy: (t) => M.abs(t),
+  },
+  powerReal: {
+    2: (x, y) => x * x - y * y, 3: (x, y) => x ** 3 - 3 * x * y * y,
+    4: (x, y) => x ** 4 - 6 * x * x * y * y + y ** 4,
+    5: (x, y) => x ** 5 - 10 * x ** 3 * y * y + 5 * x * y ** 4,
+  },
+};
+
+function buildMap(name, grammar) {
+  const g = grammar;
+  let step;
+  if (g.family === 'mutation') {
+    const f = BUILD.real[g.real], h = BUILD.imag[g.imag];
+    step = (x, y, cx, cy) => [f(x) - y + cx, h(2.0 * x * y) + cy];
+  } else if (g.family === 'fold') {
+    const h = BUILD.imag[g.imag];
+    const pr = BUILD.powerReal[g.power || 2];
+    const wrap = g.real === 'abs' ? M.abs : (v) => v;
+    step = (x, y, cx, cy) => [wrap(pr(x, y)) + cx, h(2.0 * x * y) + cy];
+  } else {
+    const pr = BUILD.powerReal[g.power || 3];
+    const n = g.power || 3;
+    // imaginary part of z^n via (x+iy)^n binomial for n=2..5
+    const pi = {
+      2: (x, y) => 2.0 * x * y,
+      3: (x, y) => 3 * x * x * y - y ** 3,
+      4: (x, y) => 4 * x * y * (x * x - y * y),
+      5: (x, y) => 5 * x ** 4 * y - 10 * x * x * y ** 3 + y ** 5,
+    }[n];
+    step = (x, y, cx, cy) => [pr(x, y) + cx, pi(x, y) + cy];
+  }
+  const esc = g.family === 'mutation' ? 1e4 : 4.0;
+  return {
+    label: name + ' (built)',
+    win: g.family === 'mutation' ? [-2.5, 2.5, -2.5, 2.5] : [-2.0, 2.0, -2.0, 2.0],
+    step,
+    gone: (x, y) => {
+      const r = x * x + y * y;
+      return r > esc || !isFinite(r);
+    },
+  };
+}
+
+(function buildSuiteUI() {
+  const panel = document.getElementById('build-panel');
+  if (!panel) return;
+  const selR = document.getElementById('bu-real'), selI = document.getElementById('bu-imag');
+  for (const [sel, table] of [[selR, BUILD.real], [selI, BUILD.imag]])
+    for (const k of Object.keys(table)) sel.appendChild(Object.assign(document.createElement('option'), { value: k, textContent: k }));
+  const selF = document.getElementById('bu-family'), selP = document.getElementById('bu-power');
+  const nameEl = document.getElementById('bu-name');
+  const cv = document.getElementById('bu-canvas'), ctx = cv.getContext('2d');
+  const hud = document.getElementById('bu-hud');
+  let current = null;
+
+  function grammar() {
+    return {
+      family: selF.value,
+      real: selR.value, imag: selI.value,
+      power: +selP.value,
+    };
+  }
+  function redraw() {
+    current = buildMap((nameEl.value || 'custom').replace(/[^a-z0-9_]/gi, ''), grammar());
+    // quick escape-time preview (not orbit density: instant feedback)
+    const N = cv.width, img = ctx.createImageData(N, N);
+    const w = current.win, half = (w[1] - w[0]) / 2;
+    let k = 0;
+    for (let py = 0; py < N; py++) {
+      for (let px = 0; px < N; px++, k += 4) {
+        const cx = w[0] + (px / N) * (w[1] - w[0]);
+        const cy = w[3] - (py / N) * (w[3] - w[2]);
+        let x = cx, y = cy, n = 0;
+        for (; n < 80; n++) {
+          [x, y] = current.step(x, y, cx, cy);
+          if (!isFinite(x) || !isFinite(y) || current.gone(x, y)) break;
+        }
+        const t = n / 80;
+        img.data[k] = 9 + 246 * t ** 1.6;
+        img.data[k + 1] = 9 + 230 * t ** 2.2;
+        img.data[k + 2] = 14 + 200 * t ** 3;
+        img.data[k + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    hud.textContent = current.label + ' · ' + JSON.stringify(grammar());
+  }
+  [selR, selI, selF, selP].forEach((el) => el.addEventListener('change', redraw));
+  nameEl.addEventListener('input', redraw);
+  document.getElementById('bu-register').addEventListener('click', () => {
+    if (!current) redraw();
+    const key = 'built_' + (nameEl.value || 'custom').replace(/[^a-z0-9_]/gi, '').toLowerCase();
+    MAPS[key] = current;
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = current.label;
+    document.getElementById('ot-map').appendChild(opt);
+    document.getElementById('ot-map').value = key;
+    document.getElementById('mb-map').appendChild(Object.assign(document.createElement('option'), { value: key, textContent: current.label }));
+    hud.textContent = 'registered as ' + key + ' — live in Orbit theater + Developing room';
+  });
+  document.getElementById('bu-compare').addEventListener('click', () => {
+    if (!current) redraw();
+    const a = document.getElementById('bu-canvas'), b = document.getElementById('bu-base');
+    b.width = a.width; b.height = a.height;
+    const bctx = b.getContext('2d');
+    const base = currentMap(document.getElementById('ot-map'));
+    const N = a.width, img = bctx.createImageData(N, N);
+    const w = current.win;
+    let k = 0;
+    for (let py = 0; py < N; py++) {
+      for (let px = 0; px < N; px++, k += 4) {
+        const cx = w[0] + (px / N) * (w[1] - w[0]);
+        const cy = w[3] - (py / N) * (w[3] - w[2]);
+        let x = cx, y = cy, n = 0;
+        for (; n < 80; n++) {
+          [x, y] = base.step(x, y, cx, cy);
+          if (!isFinite(x) || !isFinite(y) || base.gone(x, y)) break;
+        }
+        const t = n / 80;
+        img.data[k] = 9 + 246 * t ** 1.6;
+        img.data[k + 1] = 9 + 230 * t ** 2.2;
+        img.data[k + 2] = 14 + 200 * t ** 3;
+        img.data[k + 3] = 255;
+      }
+    }
+    bctx.putImageData(img, 0, 0);
+    hud.textContent = 'side-by-side: left = built, right = current theater map';
+  });
+  // register catalogue entries (user-authored maps shipped from brot_build)
+  if (window.BROT_CATALOGUE) {
+    const list = document.getElementById('bu-catalogue');
+    for (const e of window.BROT_CATALOGUE) {
+      if (!e.grammar) continue;
+      const key = 'cat_' + e.name;
+      MAPS[key] = buildMap(e.name, e.grammar);
+      const li = document.createElement('li');
+      li.style.cssText = 'display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted)';
+      if (e.hasPreview) {
+        const img = document.createElement('img');
+        img.src = e.preview;
+        img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:6px';
+        li.appendChild(img);
+      }
+      const span = document.createElement('span');
+      span.innerHTML = '<b style="color:var(--text)">' + e.name + '</b><br>' + e.formula;
+      li.appendChild(span);
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = 'load';
+      btn.onclick = () => {
+        const sel = document.getElementById('ot-map');
+        if (![...sel.options].some((o) => o.value === key)) sel.appendChild(Object.assign(document.createElement('option'), { value: key, textContent: e.name }));
+        sel.value = key;
+        hud.textContent = e.name + ' loaded into the orbit theater';
+      };
+      li.appendChild(btn);
+      list.appendChild(li);
+    }
+  }
+  redraw();
+})();
