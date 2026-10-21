@@ -1,0 +1,119 @@
+name: APRS intake
+
+# GitHub-native APRS submission path (docs/adr/0001-aprs.md):
+# an issue-form upload (.github/ISSUE_TEMPLATE/aprs.yml, label 'aprs') ->
+# validate the attachment with scripts/validate_aprs.py -> dedupe by preview
+# hash against collection/ -> comment pass/fail with reasons -> on pass open a
+# curation PR adding collection/<hash>.aprs.json + the regenerated index.
+# The bot merges NOTHING: human curation only.
+#
+# NB pull-requests: write is required in addition to contents/issues because
+# opening the curation PR itself needs it; PRs opened by the default
+# GITHUB_TOKEN do not re-trigger CI (GitHub anti-recursion rule) — the
+# curator's review/reopen runs the checks.
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: aprs-intake-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == 'aprs') ||
+      (github.event.action == 'opened' && contains(toJson(github.event.issue.labels), 'aprs'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ISSUE: ${{ github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find the .aprs.json attachment
+        id: find
+        run: |
+          body="$(gh api "repos/${{ github.repository }}/issues/$ISSUE" -q .body)"
+          url="$(printf '%s' "$body" | grep -oE 'https://[^[:space:]())"<>]+[.]aprs[.]json' | head -1 || true)"
+          if [ -z "$url" ]; then
+            printf '%s\n' \
+              "APRS intake :x: — no \`.aprs.json\` attachment link found in the issue body." \
+              "Please attach the file (drag & drop it into the form field) so the body" \
+              "carries an \`https://github.com/user-attachments/files/...aprs.json\` link," \
+              "then re-add the \`aprs\` label." > /tmp/comment.md
+            gh issue comment "$ISSUE" --body-file /tmp/comment.md
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Download, validate, dedupe
+        id: gate
+        run: |
+          curl -fsSL -o submit.aprs.json "${{ steps.find.outputs.url }}"
+          set +e
+          python scripts/validate_aprs.py submit.aprs.json > reasons.txt 2>&1
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            { echo "APRS validation :x: — \`scripts/validate_aprs.py\` rejected the record:"; echo; \
+              sed 's/^/> /' reasons.txt; echo; \
+              echo "Fix the listed fields and submit again (the playground and \`brot_build aprs\` always emit valid records)."; \
+            } > /tmp/comment.md
+            gh issue comment "$ISSUE" --body-file /tmp/comment.md
+            exit 1
+          fi
+          hash="$(python -c 'import json; print(json.load(open("submit.aprs.json"))["preview"])')"
+          if [ "$hash" = "None" ]; then
+            printf '%s\n' \
+              "APRS intake :x: — the record has \`preview: null\`; collection entries need a" \
+              "preview hash for dedupe and file naming. Re-export with a rendered preview." \
+              > /tmp/comment.md
+            gh issue comment "$ISSUE" --body-file /tmp/comment.md
+            exit 1
+          fi
+          if [ -e "collection/$hash.aprs.json" ]; then
+            printf '%s\n' \
+              "APRS intake :x: — duplicate: a record with preview hash \`$hash\` is already" \
+              "in the collection (collection/$hash.aprs.json)." > /tmp/comment.md
+            gh issue comment "$ISSUE" --body-file /tmp/comment.md
+            exit 1
+          fi
+          echo "hash=$hash" >> "$GITHUB_OUTPUT"
+
+      - name: Open curation PR (nothing merges automatically)
+        env:
+          HASH: ${{ steps.gate.outputs.hash }}
+        run: |
+          name="$(python -c 'import json; print(json.load(open("submit.aprs.json"))["name"])')"
+          branch="aprs-intake-$HASH"
+          git config user.name "fractal-darkroom-intake[bot]"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -b "$branch"
+          cp submit.aprs.json "collection/$HASH.aprs.json"
+          python scripts/build_collection.py
+          git add collection docs/assets/collection.js
+          git commit -m "APRS intake: add $name ($HASH) from #$ISSUE"
+          git push origin "$branch"
+          printf '%s\n' \
+            "Validated APRS submission from #$ISSUE (preview \`$HASH\`): **$name**" \
+            "" \
+            "- adds \`collection/$HASH.aprs.json\` exactly as submitted (validated by \`scripts/validate_aprs.py\`)" \
+            "- regenerates \`collection/index.json\` + \`docs/assets/collection.js\` via \`scripts/build_collection.py\`" \
+            "" \
+            "Human curation only — nothing merges automatically. Checks do not auto-run" \
+            "on bot-opened PRs; reviewers can close/reopen or push an empty commit to trigger lanes." \
+            > /tmp/pr.md
+          pr_url="$(gh pr create --title "APRS intake: $name (#$ISSUE)" --body-file /tmp/pr.md --head "$branch")"
+          printf '%s\n' \
+            "APRS validation :white_check_mark: — record accepted (preview \`$HASH\`), deduped" \
+            "against the collection. Curation PR opened: $pr_url — a human curates;" \
+            "nothing merges automatically." > /tmp/comment.md
+          gh issue comment "$ISSUE" --body-file /tmp/comment.md

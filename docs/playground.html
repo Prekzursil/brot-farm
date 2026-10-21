@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-build="be153f77" lang="en">
+<html data-build="0439746c" lang="en">
 <head>
 <script>
 /* error banner: works even if every other asset fails; shown only on error */
@@ -19,6 +19,7 @@
   <a href="math.html">Math</a>
   <a href="code.html">Code</a>
   <a href="playground.html" aria-current="page">Playground</a>
+  <a href="collection.html">Collection</a>
   <div class="spacer"></div>
   <a class="github" href="https://github.com/Prekzursil/fractal-darkroom">GitHub ↗</a>
 </nav>
@@ -148,8 +149,12 @@ lands anyone on <b>exactly</b> your state. <b>Surprise me</b> composes a random 
 grammar from a seed (same seed, same map), <b>Mutate this</b> perturbs exactly one operator of
 the current map and shows it side-by-side with its base, and the suggestion engine scores
 seeded candidates by escape fraction and dynamic range. Pin favourites to
-<code>localStorage</code>, export/import them as JSON, and save any experiment as JSON or
-PNG &mdash; everything offline, no server, works straight off a <code>file://</code> copy.</p>
+<code>localStorage</code>, export/import them as JSON, save any experiment as JSON or PNG, and
+export the current experiment as an <b>APRS bundle</b> (<code>.aprs.json</code>, the
+portable Attractor Parameter Record Set of <a href="collection.html">the collection</a>)
+or load one back &mdash; validated in-browser against the same field set as
+<code>scripts/validate_aprs.py</code>. Everything offline, no server, works straight
+off a <code>file://</code> copy.</p>
 <div class="panel reveal" id="exp-panel">
   <div class="controls">
     <label>seed <input type="number" id="exp-seed" value="12345" min="0" max="2147483647" style="width:96px"></label>
@@ -164,6 +169,9 @@ PNG &mdash; everything offline, no server, works straight off a <code>file://</c
     <button class="btn" id="exp-save-json">save experiment JSON</button>
     <label class="btn" for="exp-import" style="cursor:pointer">import JSON&hellip;</label>
     <input type="file" id="exp-import" accept=".json,application/json" hidden>
+    <button class="btn" id="exp-export-aprs">&#128230; export APRS</button>
+    <label class="btn" for="exp-import-aprs" style="cursor:pointer">load APRS&hellip;</label>
+    <input type="file" id="exp-import-aprs" accept=".json,application/json" hidden>
     <button class="btn" id="exp-export-pins">export pins</button>
     <label class="btn" for="exp-import-pins" style="cursor:pointer">import pins&hellip;</label>
     <input type="file" id="exp-import-pins" accept=".json,application/json" hidden>
@@ -198,7 +206,8 @@ A few with known-good results:</p>
 <footer>
   Fractal Darkroom · MIT · all computation in your browser · <a href="index.html">back to the gallery →</a>
 </footer>
-<script src="assets/catalogue.js?v=x"></script>
-<script src="assets/playground.js?v=c00c5b45"></script>
+<script src="assets/app.js?v=81e01ed8"></script>
+<script src="assets/catalogue.js?v=756d7c3d"></script>
+<script src="assets/playground.js?v=2bb75e50"></script>
 </body>
 </html>

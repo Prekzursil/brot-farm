@@ -131,6 +131,64 @@ function rng(seed) {
   };
 }
 
+/* --------------------------------------------------------- SHA-1 (for APRS) */
+// Compact FIPS 180-1 SHA-1 over a Uint8Array -> lowercase hex. Used to stamp
+// APRS previews (sha1[:8] of the 128px preview PNG, docs/adr/0001-aprs.md)
+// without crypto.subtle, which some file:// embedders do not expose.
+function sha1hex(bytes) {
+  const ml = bytes.length;
+  const blocks = ((ml + 8) >> 6) + 1; // total 64-byte blocks after padding
+  const msg = new Uint32Array(blocks * 16); // padded message words
+  for (let i = 0; i < ml; i++) msg[i >> 2] |= bytes[i] << (24 - (i % 4) * 8);
+  msg[ml >> 2] |= 0x80 << (24 - (ml % 4) * 8);
+  msg[blocks * 16 - 1] = ml * 8;
+  const rol = (x, s) => (x << s) | (x >>> (32 - s));
+  let h0 = 0x67452301,
+    h1 = 0xefcdab89,
+    h2 = 0x98badcfe,
+    h3 = 0x10325476,
+    h4 = 0xc3d2e1f0;
+  for (let blk = 0; blk < blocks; blk++) {
+    // per-block schedule window: never shares storage with later message words
+    const W = new Uint32Array(80);
+    for (let i = 0; i < 16; i++) W[i] = msg[blk * 16 + i];
+    for (let t = 16; t < 80; t++) W[t] = rol(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
+    let a = h0,
+      b = h1,
+      c = h2,
+      d = h3,
+      e = h4;
+    for (let t = 0; t < 80; t++) {
+      let f, k;
+      if (t < 20) {
+        f = (b & c) | (~b & d);
+        k = 0x5a827999;
+      } else if (t < 40) {
+        f = b ^ c ^ d;
+        k = 0x6ed9eba1;
+      } else if (t < 60) {
+        f = (b & c) | (b & d) | (c & d);
+        k = 0x8f1bbcdc;
+      } else {
+        f = b ^ c ^ d;
+        k = 0xca62c1d6;
+      }
+      const tmp = (rol(a, 5) + f + e + k + W[t]) | 0;
+      e = d;
+      d = c;
+      c = rol(b, 30);
+      b = a;
+      a = tmp;
+    }
+    h0 = (h0 + a) | 0;
+    h1 = (h1 + b) | 0;
+    h2 = (h2 + c) | 0;
+    h3 = (h3 + d) | 0;
+    h4 = (h4 + e) | 0;
+  }
+  return [h0, h1, h2, h3, h4].map((x) => (x >>> 0).toString(16).padStart(8, '0')).join('');
+}
+
 /* ------------------------------------------------- formula sandbox compile */
 function compileFormula(fxSrc, fySrc) {
   const names = Object.getOwnPropertyNames(Math).filter((k) => typeof Math[k] === 'function');
@@ -1200,6 +1258,10 @@ function buildMap(name, grammar) {
     const norm = { ...st, map };
     return { ok: true, st: norm };
   }
+  function parseExperimentData(data, where) {
+    if (Array.isArray(data)) return { ok: true, pins: data };
+    return validateState(data, where);
+  }
   function parseExperimentText(text, where) {
     let data;
     try {
@@ -1207,8 +1269,216 @@ function buildMap(name, grammar) {
     } catch (err) {
       return { ok: false, msg: `${where}: not valid JSON (${err.message})` };
     }
-    if (Array.isArray(data)) return { ok: true, pins: data };
-    return validateState(data, where);
+    return parseExperimentData(data, where);
+  }
+
+  /* ------------------------------------------- APRS bundles (L5, ADR 0001) */
+  // Attractor Parameter Record Set: the shareable experiment record. The JS
+  // rules below mirror scripts/validate_aprs.py field-for-field (the Python
+  // validator is the authority; both producers must pass both).
+  const APRS = {
+    REQUIRED: [
+      'schema',
+      'name',
+      'grammar',
+      'window',
+      'caps',
+      'gamma',
+      'notes',
+      'author',
+      'created',
+      'renderer',
+      'provenance',
+      'preview',
+    ],
+    PROV: ['authored-on-site', 'imported-bundle'],
+    NAME: /^[A-Za-z0-9_][A-Za-z0-9_ -]*$/,
+    PREVIEW: /^[0-9a-f]{8}$/,
+    CREATED: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/,
+  };
+  function validateAprs(d, where) {
+    const p = (m) => ({ ok: false, msg: `${where}: ${m}` });
+    if (!d || typeof d !== 'object' || Array.isArray(d))
+      return p('top level must be a JSON object');
+    const errs = [];
+    for (const k of Object.keys(d))
+      if (!APRS.REQUIRED.includes(k)) errs.push(`unknown field '${k}'`);
+    for (const k of APRS.REQUIRED) if (!(k in d)) errs.push(`missing required field '${k}'`);
+    const numOk = (v) => typeof v === 'number' && Number.isFinite(v);
+    if (d.schema && typeof d.schema === 'object') {
+      for (const k of Object.keys(d.schema))
+        if (k !== 'version') errs.push(`unknown field '${k}' in schema`);
+      if ('version' in d.schema && d.schema.version !== 1)
+        errs.push('schema.version must be the integer 1');
+    } else {
+      errs.push('schema must be an object with an integer version field');
+    }
+    if (
+      typeof d.name !== 'string' ||
+      d.name.length < 1 ||
+      d.name.length > 40 ||
+      !APRS.NAME.test(d.name)
+    )
+      errs.push('name must be 1-40 chars matching ^[A-Za-z0-9_][A-Za-z0-9_ -]*$');
+    if (d.grammar && typeof d.grammar === 'object' && !Array.isArray(d.grammar)) {
+      const g = d.grammar;
+      if (!FAMILIES.includes(g.family))
+        errs.push(`grammar.family must be one of ${FAMILIES.join('|')}`);
+      if (!REAL_KEYS.includes(g.real))
+        errs.push(`grammar.real must be one of ${REAL_KEYS.join('|')}`);
+      if (!IMAG_KEYS.includes(g.imag))
+        errs.push(`grammar.imag must be one of ${IMAG_KEYS.join('|')}`);
+      if (!Number.isInteger(g.power) || g.power < 2 || g.power > 5)
+        errs.push('grammar.power must be an integer in [2, 5]');
+      for (const k of Object.keys(g))
+        if (!['family', 'real', 'imag', 'power'].includes(k))
+          errs.push(`unknown field '${k}' in grammar`);
+    } else {
+      errs.push('grammar must be an object {family, real, imag, power}');
+    }
+    if (
+      Array.isArray(d.window) &&
+      d.window.length === 4 &&
+      d.window.every((v) => numOk(v) && Math.abs(v) <= 1e4)
+    ) {
+      if (!(d.window[1] > d.window[0] && d.window[3] > d.window[2]))
+        errs.push('window must be ordered [x0<x1, y0<y1]');
+    } else {
+      errs.push('window must be 4 finite numbers with |v| <= 10000');
+    }
+    if (
+      Array.isArray(d.caps) &&
+      d.caps.length === 3 &&
+      d.caps.every((c) => Number.isInteger(c) && c > 0 && c <= 100000)
+    ) {
+      if (!(d.caps[0] < d.caps[1] && d.caps[1] < d.caps[2]))
+        errs.push('caps must be 3 strictly ascending iteration caps');
+    } else {
+      errs.push('caps must be 3 integers with 0 < cap <= 100000');
+    }
+    if (!numOk(d.gamma) || d.gamma <= 0 || d.gamma > 10)
+      errs.push('gamma must be a finite number in (0, 10]');
+    if (typeof d.notes !== 'string' || d.notes.length > 2000)
+      errs.push('notes must be a string of at most 2000 chars');
+    if (typeof d.author !== 'string' || d.author.length < 1 || d.author.length > 80)
+      errs.push('author must be a string of 1-80 chars');
+    if (
+      typeof d.created !== 'string' ||
+      !APRS.CREATED.test(d.created) ||
+      Number.isNaN(Date.parse(d.created))
+    )
+      errs.push('created must be an RFC 3339 date-time with timezone');
+    if (d.renderer !== 'fractal-darkroom') errs.push("renderer must be 'fractal-darkroom'");
+    if (!APRS.PROV.includes(d.provenance))
+      errs.push(`provenance must be one of ${APRS.PROV.join('|')}`);
+    if (d.preview !== null && (typeof d.preview !== 'string' || !APRS.PREVIEW.test(d.preview)))
+      errs.push('preview must be null or 8 lowercase hex chars (sha1[:8])');
+    return errs.length ? p(errs.join('; ')) : { ok: true };
+  }
+  function looksLikeAprs(data) {
+    return (
+      !!data &&
+      typeof data === 'object' &&
+      !Array.isArray(data) &&
+      data.renderer === 'fractal-darkroom' &&
+      !!data.grammar &&
+      typeof data.grammar === 'object'
+    );
+  }
+  function aprsNameFor(g, key) {
+    const raw = (g && g.name) || key || 'aprs';
+    const s = String(raw)
+      .replace(/[^A-Za-z0-9_ -]/g, '')
+      .slice(0, 40);
+    return /^[A-Za-z0-9_]/.test(s) ? s : 'aprs_' + s;
+  }
+  let loadedAprs = null; // last loaded bundle; re-export carries its provenance
+  async function exportAprs() {
+    const otKey = document.getElementById('ot-map').value;
+    const g = currentGrammar || grammarFor(otKey);
+    if (!g) {
+      hudMsg(
+        'APRS export needs a grammar-backed map (stock grammar maps, built/surprise maps, or a loaded APRS)',
+        true,
+      );
+      return;
+    }
+    const cap = +document.getElementById('mb-cap').value;
+    const caps = [
+      Math.min(Math.max(10, Math.floor(cap / 5)), cap - 1),
+      cap,
+      Math.min(100000, cap * 5),
+    ];
+    const off = document.createElement('canvas');
+    off.width = off.height = 128;
+    renderEscapeTime(off, activeExpMap());
+    const blob = await new Promise((res) => off.toBlob(res, 'image/png'));
+    const preview = blob ? sha1hex(new Uint8Array(await blob.arrayBuffer())).slice(0, 8) : null;
+    const rec = {
+      schema: { version: 1 },
+      name: aprsNameFor(g, otKey),
+      grammar: { family: g.family, real: g.real, imag: g.imag, power: g.power },
+      window: (activeExpMap().win || [-2.5, 2.5, -2.5, 2.5]).map(Number),
+      caps,
+      gamma: +document.getElementById('mb-gamma').value,
+      notes: 'exported from the playground experiments panel',
+      author: 'playground',
+      created: new Date().toISOString(),
+      renderer: 'fractal-darkroom',
+      provenance: loadedAprs ? 'imported-bundle' : 'authored-on-site',
+      preview,
+    };
+    const v = validateAprs(rec, 'APRS export');
+    if (!v.ok) {
+      hudMsg(v.msg, true);
+      return;
+    }
+    download(
+      `${rec.name}.aprs.json`,
+      new Blob([JSON.stringify(rec, null, 2) + '\n'], { type: 'application/json' }),
+    );
+    hudMsg(
+      `APRS <b>${esc(rec.name)}</b> exported · preview ${rec.preview} · validated against the schema v1 field set`,
+    );
+  }
+  function loadAprsData(d, where) {
+    const v = validateAprs(d, where);
+    if (!v.ok) {
+      hudMsg(v.msg, true);
+      return false;
+    }
+    const g = d.grammar;
+    const mapName =
+      (d.name || 'aprs')
+        .replace(/[^a-z0-9_]/gi, '')
+        .toLowerCase()
+        .slice(0, 24) || 'aprs';
+    const cap = Math.max(10, Math.min(400, d.caps[1]));
+    const gamma = Math.max(0.4, Math.min(2.2, d.gamma));
+    const st = {
+      v: 1,
+      map: { family: g.family, real: g.real, imag: g.imag, power: g.power, name: mapName },
+      cap,
+      gamma,
+      win: d.window.slice(),
+    };
+    const vst = validateState(st, where);
+    if (!vst.ok) {
+      hudMsg(vst.msg, true);
+      return false;
+    }
+    applyState(vst.st, where);
+    loadedAprs = d;
+    const clamped = [];
+    if (cap !== d.caps[1]) clamped.push(`cap ${d.caps[1]}→${cap}`);
+    if (Math.abs(gamma - d.gamma) > 1e-9) clamped.push(`γ ${d.gamma}→${gamma}`);
+    hud.innerHTML =
+      `<b>APRS loaded</b> · ${esc(d.name)} · ${esc(`${g.family}:${g.real}/${g.imag} p${g.power}`)}` +
+      ` · caps [${d.caps.join(', ')}] · γ ${d.gamma}${d.preview ? ` · preview ${d.preview}` : ' · no preview'}` +
+      ` · provenance <b>${esc(d.provenance)}</b>` +
+      (clamped.length ? ` · clamped to UI range: ${clamped.join(', ')}` : '') +
+      ' — re-export keeps provenance “imported-bundle”';
+    return true;
   }
 
   /* ---------------------------------------------------------- state: apply */
@@ -1571,7 +1841,18 @@ function buildMap(name, grammar) {
     file
       .text()
       .then((txt) => {
-        const r = parseExperimentText(txt, where);
+        let data;
+        try {
+          data = JSON.parse(txt);
+        } catch (err) {
+          hudMsg(`${where}: not valid JSON (${esc(err.message)})`, true);
+          return;
+        }
+        if (looksLikeAprs(data)) {
+          loadAprsData(data, `${where} (APRS)`);
+          return;
+        }
+        const r = parseExperimentData(data, where);
         if (!r.ok) {
           hudMsg(r.msg, true);
           return;
@@ -1748,6 +2029,15 @@ function buildMap(name, grammar) {
       new Blob([JSON.stringify(r.pins, null, 2)], { type: 'application/json' }),
     );
     hudMsg(`${r.pins.length} pins exported`);
+  });
+  // APRS bundle export / import (picker; drag-drop goes through importFile)
+  document.getElementById('exp-export-aprs').addEventListener('click', () => {
+    exportAprs().catch((err) => hudMsg(`APRS export failed (${esc(err.message)})`, true));
+  });
+  document.getElementById('exp-import-aprs').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) importFile(f, 'APRS file');
+    e.target.value = '';
   });
   // drag-drop import: an experiment JSON or a pins export, both accepted
   panel.addEventListener('dragover', (e) => e.preventDefault());

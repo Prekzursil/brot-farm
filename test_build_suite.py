@@ -2,6 +2,7 @@
 Python<->JavaScript map parity gate (CI-enforced: the two sides can never
 drift apart in the map catalogue)."""
 
+import json
 import re
 
 import pytest
@@ -225,3 +226,90 @@ def test_cli_scout_dispatch(tmp_path, monkeypatch):
     bb.main(["new", "s1", "--family", "power", "--power", "4"])
     bb.main(["scout", "s1"])
     assert (tmp_path / "out" / "scout_s1.json").exists()
+
+
+# ----------------------------------------------------------------- APRS (L5)
+
+
+def test_aprs_export_round_trips_validator(tmp_path, monkeypatch):
+    """brot_build aprs is a producer: its output must pass validate_aprs."""
+    from scripts.validate_aprs import validate_file
+
+    monkeypatch.setattr(bb, "APRS_PREVIEW_SAMPLES", 3_000)  # tiny smoke budget
+    monkeypatch.setattr(bb, "OUT", tmp_path / "fresh_out")
+    out = tmp_path / "demo_cossin.aprs.json"
+    bb.main(["aprs", "demo_cossin", "--out", str(out)])
+    assert out.exists()
+    assert validate_file(out) == []  # round-trip: producer -> validator
+    rec = json.loads(out.read_text(encoding="utf-8"))
+    assert rec["name"] == "demo_cossin"
+    assert rec["grammar"] == {
+        "family": "mutation",
+        "real": "cos",
+        "imag": "plain",
+        "power": 2,
+    }
+    assert rec["window"] == [-2.5, 2.5, -2.5, 2.5]
+    assert rec["caps"] == [60, 300, 1000]
+    assert rec["renderer"] == "fractal-darkroom"
+    assert rec["provenance"] == "authored-on-site"
+    assert rec["preview"]
+    # the aprs dispatch returns before the implicit catalogue regeneration
+    assert not (tmp_path / "fresh_out" / "catalogue.json").exists()
+
+
+def test_aprs_preview_hash_is_deterministic():
+    monkeypatch_samples = 250
+    r1 = bb.aprs_record(
+        "demo_cossin",
+        author="t",
+        provenance="authored-on-site",
+        preview_samples=monkeypatch_samples,
+    )
+    r2 = bb.aprs_record(
+        "demo_cossin",
+        author="t",
+        provenance="authored-on-site",
+        preview_samples=monkeypatch_samples,
+    )
+    assert r1["preview"] == r2["preview"] and len(r1["preview"]) == 8
+
+
+def test_aprs_export_refuses_invalid_record(tmp_path, monkeypatch, capsys):
+    """A usermap whose window is not ordered fails self-validation; no file."""
+    monkeypatch.setattr(bb, "USERMAPS", tmp_path)
+    monkeypatch.setattr(bb, "OUT", tmp_path / "out")
+    monkeypatch.setattr(bb, "DOCS", tmp_path / "docs")
+    monkeypatch.setattr(bb, "APRS_PREVIEW_SAMPLES", 3_000)
+    bb.cmd_new("broken", "mutation", "cos", "plain", 2)
+    src = (tmp_path / "broken.py").read_text(encoding="utf-8")
+    # NB replacement length differs from the original: the usermaps __pycache__
+    # pyc is keyed on (mtime-seconds, size); a same-length same-second rewrite
+    # would load stale bytecode and silently test nothing.
+    (tmp_path / "broken.py").write_text(
+        src.replace("plot=(-2.5, 2.5, -2.5, 2.5)", "plot=(5, -2.5, -2.5, 2.5)"),
+        encoding="utf-8",
+    )
+    assert bb.load_usermap("broken")["plot"] == (5, -2.5, -2.5, 2.5)  # fresh load
+    out = tmp_path / "sub" / "broken.aprs.json"
+    with pytest.raises(SystemExit, match="failed validation"):
+        bb.cmd_aprs("broken", out, "tester", "authored-on-site")
+    assert not out.exists()
+    assert "window must be ordered" in capsys.readouterr().out
+
+
+def test_invalid_aprs_file_rejected_with_clear_reason(tmp_path):
+    """The acceptance bullet: an invalid file is rejected with a clear reason."""
+    from scripts.validate_aprs import validate_file
+
+    bad = tmp_path / "bad.aprs.json"
+    payload = bb.aprs_record(
+        "demo_cossin",
+        author="t",
+        provenance="authored-on-site",
+        preview_samples=250,
+    )
+    payload["schema"]["version"] = 2  # tamper
+    bad.write_text(json.dumps(payload), encoding="utf-8")
+    (reason,) = validate_file(bad)
+    assert "schema.version must be the integer 1" in reason

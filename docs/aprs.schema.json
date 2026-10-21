@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prekzursil.github.io/fractal-darkroom/aprs.schema.json",
+  "title": "Attractor Parameter Record Set (APRS)",
+  "description": "Versioned, human-readable record of one fractal-darkroom experiment. Structural authority: scripts/validate_aprs.py additionally enforces the cross-field rules draft-07 cannot express (window/caps ordering, RFC 3339 parsing). Decision record: docs/adr/0001-aprs.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "name",
+    "grammar",
+    "window",
+    "caps",
+    "gamma",
+    "notes",
+    "author",
+    "created",
+    "renderer",
+    "provenance",
+    "preview"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version"],
+      "properties": {
+        "version": {
+          "type": "integer",
+          "enum": [1],
+          "description": "APRS schema version; only 1 exists."
+        }
+      }
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "pattern": "^[A-Za-z0-9_][A-Za-z0-9_ -]*$",
+      "description": "Human-readable record name."
+    },
+    "grammar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "real", "imag", "power"],
+      "description": "Operator grammar, identical semantics to brot_build.py.",
+      "properties": {
+        "family": { "enum": ["mutation", "fold", "power"] },
+        "real": { "enum": ["cos", "sin", "tan", "sinh", "exp", "abs"] },
+        "imag": { "enum": ["plain", "cos", "abs", "neg", "absxy"] },
+        "power": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 5,
+          "description": "z^n exponent (fold/power families carry it too)."
+        }
+      }
+    },
+    "window": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "Plot window [x0, x1, y0, y1]; validator additionally requires x1 > x0 and y1 > y0, |v| <= 1e4."
+    },
+    "caps": {
+      "type": "array",
+      "items": { "type": "integer", "exclusiveMinimum": 0, "maximum": 100000 },
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "Three channel iteration caps; validator additionally requires strict ascending order."
+    },
+    "gamma": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 10,
+      "description": "Tone-mapping gamma."
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Free-form curation notes."
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 timestamp with timezone (validator parses it)."
+    },
+    "renderer": {
+      "const": "fractal-darkroom",
+      "description": "Producing renderer; a compatibility lock, not marketing."
+    },
+    "provenance": {
+      "enum": ["authored-on-site", "imported-bundle"],
+      "description": "authored-on-site: produced by the playground or brot_build CLI. imported-bundle: the record arrived through an imported bundle."
+    },
+    "preview": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{8}$",
+      "description": "sha1[:8] of the 128px preview PNG, or null if the producer rendered none. Content-identity key for the collection."
+    }
+  }
+}

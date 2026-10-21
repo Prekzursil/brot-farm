@@ -1,0 +1,45 @@
+name: APRS submission
+description: Submit an Attractor Parameter Record Set (.aprs.json) for the community collection
+title: "[APRS] <record name>"
+labels: ["aprs"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **APRS** = Attractor Parameter Record Set — the portable experiment record
+        ([ADR 0001](https://prekzursil.github.io/fractal-darkroom/adr/0001-aprs.html) ·
+        [schema](https://github.com/Prekzursil/fractal-darkroom/blob/main/docs/aprs.schema.json)).
+
+        Author one in the [playground](https://prekzursil.github.io/fractal-darkroom/playground.html)
+        (**export APRS** button) or with the build suite
+        (`python brot_build.py aprs <name> --out <name>.aprs.json`).
+        The intake workflow validates every submission with
+        `scripts/validate_aprs.py`, dedupes it by preview hash against
+        `collection/`, and opens a curation PR. **A human merges nothing
+        automatically — every entry is curated by hand.**
+  - type: textarea
+    id: attachment
+    attributes:
+      label: Your .aprs.json file
+      description: |
+        Drag & drop the file into this field — it uploads and the body gets an
+        attachment link ending in `.aprs.json`. That link is what the intake
+        workflow downloads; pasted JSON without a file attachment cannot be
+        picked up.
+      placeholder: Drop <name>.aprs.json here (an https://github.com/user-attachments/files/... link appears).
+    validations:
+      required: true
+  - type: input
+    id: why
+    attributes:
+      label: Why is this map worth keeping?
+      description: One line for the human curator (visual quality, novel behavior, …).
+    validations:
+      required: true
+  - type: checkboxes
+    id: attest
+    attributes:
+      label: Provenance
+      options:
+        - label: "I authored this record myself (playground or brot_build CLI) and it exports with provenance `authored-on-site`."
+          required: true

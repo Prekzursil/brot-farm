@@ -9,6 +9,11 @@ Subcommands:
                        scalar smoke, docs card, playground catalogue parity
     mutate <base> <new-name> [--real ...] [--imag ...] [--power ...]
                        one-operator change of an existing user map
+    aprs <name> --out FILE [--author A] [--provenance P]
+                       export a user map as an APRS record
+                       (.aprs.json, docs/adr/0001-aprs.md); the record is
+                       validated with scripts/validate_aprs.py before write,
+                       and re-importable in the playground ("load APRS")
     catalogue          regenerate out/catalogue.json + docs/assets/catalogue.js
 
 Mutation grammar (identical semantics in Python and the browser playground):
@@ -20,7 +25,10 @@ Mutation grammar (identical semantics in Python and the browser playground):
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +40,8 @@ HERE = Path(__file__).resolve().parent
 USERMAPS = HERE / "usermaps"
 DOCS = HERE / "docs"
 OUT = HERE / "out"
+APRS_PREVIEW_SIZE = 128  # the APRS preview contract: a 128px PNG (ADR 0001)
+APRS_PREVIEW_SAMPLES = 120_000  # per channel; deterministic (seeded rng)
 
 REAL_OPS: dict[str, tuple[str, str]] = {  # name -> (numpy expr source, js expr source)
     "cos": ("np.cos(x * x) - y + cx", "Math.cos(x * x) - y + cx"),
@@ -212,10 +222,12 @@ def cmd_scout(name: str) -> dict[str, Any]:
     return report
 
 
-def cmd_preview(name: str, size: int = 512, samples: int = 900_000) -> Path:
-    from PIL import Image
+def render_rgb(f: dict[str, Any], size: int, samples: int) -> np.ndarray:
+    """Deterministic 3-channel density render (the preview pipeline).
 
-    f = load_usermap(name)
+    Same seeded rng and tone map on every call — the APRS preview hash
+    (sha1 of the PNG bytes) is a stable function of (map, size, samples).
+    """
     hists: dict[str, np.ndarray] = {}
     for ci, (cap, budget) in enumerate(f["chans"]):
         total = min(samples, budget)  # --samples caps the per-channel budget
@@ -237,9 +249,16 @@ def cmd_preview(name: str, size: int = 512, samples: int = 900_000) -> Path:
         hists[farm.CHAN_NAMES[ci]] = hist.reshape(H, W)[::-1]
     from buddhabrot import build_rgb
 
-    rgb = build_rgb(
+    return build_rgb(
         hists, 30, 99.9, 1.3, {"red": 1.15, "green": 1.05, "blue": 0.90}, 1.15
     )
+
+
+def cmd_preview(name: str, size: int = 512, samples: int = 900_000) -> Path:
+    from PIL import Image
+
+    f = load_usermap(name)
+    rgb = render_rgb(f, size, samples)
     u8 = (rgb * 255.0 + 0.5).astype(np.uint8)
     OUT.mkdir(exist_ok=True)
     out_path = OUT / f"preview_{name}.png"
@@ -252,6 +271,68 @@ def cmd_preview(name: str, size: int = 512, samples: int = 900_000) -> Path:
     print(f"preview -> {out_path} (thumb {thumb})")
     cmd_catalogue()
     return out_path
+
+
+def aprs_record(
+    name: str,
+    *,
+    author: str,
+    provenance: str,
+    preview_samples: int,
+) -> dict[str, Any]:
+    """Build an APRS v1 record (docs/adr/0001-aprs.md) for a user map.
+
+    preview = sha1[:8] of the deterministic 128px preview PNG.
+    """
+    from PIL import Image
+
+    f = load_usermap(name)
+    u8 = (render_rgb(f, APRS_PREVIEW_SIZE, preview_samples) * 255.0 + 0.5).astype(
+        np.uint8
+    )
+    buf = io.BytesIO()
+    Image.fromarray(u8).save(buf, "PNG")
+    g = f["grammar"]
+    return {
+        "schema": {"version": 1},
+        "name": name,
+        "grammar": {
+            "family": str(g["family"]),
+            "real": str(g["real"]),
+            "imag": str(g["imag"]),
+            "power": int(g["power"]),
+        },
+        "window": [float(v) for v in f["plot"]],
+        "caps": [int(c[0]) for c in f["chans"]],
+        "gamma": 1.3,  # the preview pipeline's tone gamma (build_rgb call above)
+        "notes": f"{f['sub']} — exported by brot_build aprs",
+        "author": author,
+        "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "renderer": "fractal-darkroom",
+        "provenance": provenance,
+        "preview": hashlib.sha1(buf.getvalue()).hexdigest()[:8],
+    }
+
+
+def cmd_aprs(name: str, out: Path, author: str, provenance: str) -> Path:
+    """Export a user map as APRS; self-validates before writing."""
+    from scripts.validate_aprs import validate_data
+
+    rec = aprs_record(
+        name,
+        author=author,
+        provenance=provenance,
+        preview_samples=APRS_PREVIEW_SAMPLES,
+    )
+    problems = validate_data(rec)
+    if problems:
+        for p in problems:
+            print(f"  FAIL aprs: {p}")
+        raise SystemExit(f"APRS export of {name!r} failed validation; nothing written")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
+    print(f"APRS -> {out} (preview {rec['preview']}, validator OK)")
+    return out
 
 
 def catalogue_entries() -> list[dict[str, Any]]:
@@ -389,6 +470,17 @@ def main(argv: list[str] | None = None) -> None:
     p_mut.add_argument("--real", choices=sorted(REAL_OPS))
     p_mut.add_argument("--imag", choices=sorted(IMAG_OPS))
     p_mut.add_argument("--power", type=int, choices=sorted(POWER_TERMS))
+    p_aprs = sub.add_parser("aprs")
+    p_aprs.add_argument("name")
+    p_aprs.add_argument(
+        "--out", type=Path, required=True, help="output .aprs.json path"
+    )
+    p_aprs.add_argument("--author", default="brot_build CLI")
+    p_aprs.add_argument(
+        "--provenance",
+        choices=["authored-on-site", "imported-bundle"],
+        default="authored-on-site",
+    )
     sub.add_parser("catalogue")
     args = ap.parse_args(argv)
 
@@ -402,6 +494,9 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit(0 if cmd_check(args.name) else 1)
     elif args.cmd == "mutate":
         cmd_mutate(args.base, args.new, args.real, args.imag, args.power)
+    elif args.cmd == "aprs":
+        cmd_aprs(args.name, args.out, args.author, args.provenance)
+        return
     # args.cmd == "catalogue" is the remaining choice (argparse guarantees it)
     cmd_catalogue()
 

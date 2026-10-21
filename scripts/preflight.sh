@@ -5,8 +5,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PIN=$(gh api repos/Prekzursil/quality-zero-platform/contents/.github/workflows/reusable-quality.yml \
-  -q .content | base64 -d | grep -oE 'biome@[0-9.]+' | head -1 | cut -d@ -f2)
+PIN=$(curl -fsSL --max-time 15 \
+  https://raw.githubusercontent.com/Prekzursil/quality-zero-platform/main/.quality/tool-pins.yml \
+  2>/dev/null | sed -n 's/^  biome: "\(.*\)"$/\1/p' | head -1 || true)
+# same fallback as the platform's own gate-lint-format-jsts lane: on any
+# fetch/parse failure, pin to the last committed version — never garbage
+case "$PIN" in ''|*[!0-9.]*) PIN="2.5.15" ;; esac
 echo "== gate 1a: ruff =="
 ruff check .
 ruff format --check .

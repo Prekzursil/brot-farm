@@ -21,13 +21,17 @@ import functools
 import http.server
 import json
 import socketserver
+import sys
 import threading
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-DOCS = Path(__file__).resolve().parent.parent / "docs"
-PAGES = ["index.html", "math.html", "code.html", "playground.html"]
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO))  # scripts.validate_aprs import when run directly
+
+DOCS = REPO / "docs"
+PAGES = ["index.html", "math.html", "code.html", "playground.html", "collection.html"]
 CANVAS_LUM = """(cid) => {
     const c = document.getElementById(cid);
     if (!c) return null;
@@ -94,6 +98,14 @@ def check_page(pg, base: str, page_name: str, mobile: bool) -> None:
             unversioned == 0,
             f"{unversioned} unversioned refs",
         )
+
+    # scroll-reveal must actually reveal: .reveal content invisible (opacity 0)
+    # on pages that forget to load app.js (the IntersectionObserver owner)
+    op = pg.evaluate(
+        "() => { const el = document.querySelector('.reveal');"
+        " return el ? getComputedStyle(el).opacity : '1'; }"
+    )
+    record(lane, "reveal-visible", float(op) > 0.9, f"opacity={op}")
 
     if page_name == "index.html":
         hero = pg.evaluate(
@@ -168,6 +180,25 @@ def check_page(pg, base: str, page_name: str, mobile: bool) -> None:
             "sent c" in (pg.text_content("#ex-hud") or ""),
             (pg.text_content("#ex-hud") or "")[-60:],
         )
+    if page_name == "collection.html":
+        n = pg.evaluate("() => document.getElementById('col-list').children.length")
+        record(lane, "collection-entries", n > 0, f"{n} entries")
+        hud = (pg.text_content("#col-hud") or "").replace("\n", " ")
+        record(
+            lane,
+            "collection-hud",
+            "curated record" in hud,
+            hud[:60],
+        )
+        badge = pg.evaluate(
+            "() => [...document.querySelectorAll('#col-list b, #col-list span')]"
+            ".some(e => /authored-on-site|imported-bundle/.test(e.textContent))"
+        )
+        record(lane, "collection-badges", bool(badge), "provenance badge present")
+        nav = pg.evaluate(
+            "() => [...document.querySelectorAll('nav a')].some(a => a.textContent === 'Collection')"
+        )
+        record(lane, "collection-nav", bool(nav))
     if page_name == "playground.html" and not mobile:
         # build-suite panel: preview paints, register adds the map, catalogue lists entries
         record(lane, "build-preview", (pg.evaluate(CANVAS_LUM, "bu-canvas") or 0) > 1)
@@ -259,6 +290,39 @@ def check_page(pg, base: str, page_name: str, mobile: bool) -> None:
             f"hud={exp_hud[:60]!r} gamma={gamma_back}",
         )
         pg.evaluate("() => { location.hash = ''; }")
+        # L5 APRS: playground export -> the real Python validator -> load back.
+        # The download is the producer's artifact; validate_file is the same
+        # authority the intake workflow runs.
+        from scripts.validate_aprs import validate_file
+
+        pg.evaluate(
+            "() => { const g = document.getElementById('mb-gamma');"
+            " g.value = '1.85'; g.dispatchEvent(new Event('input')); }"
+        )
+        with pg.expect_download() as dl:
+            pg.click("#exp-export-aprs")
+        dl.value.save_as("out/aprs_probe_download.aprs.json")
+        reasons = validate_file(Path("out/aprs_probe_download.aprs.json"))
+        record(
+            lane,
+            "aprs-export-validates",
+            reasons == [],
+            "; ".join(reasons[:2]) or dl.value.suggested_filename,
+        )
+        pg.evaluate(
+            "() => { const g = document.getElementById('mb-gamma');"
+            " g.value = '1.0'; g.dispatchEvent(new Event('input')); }"
+        )
+        pg.set_input_files("#exp-import-aprs", "out/aprs_probe_download.aprs.json")
+        pg.wait_for_timeout(700)
+        aprs_hud = (pg.text_content("#exp-hud") or "").replace("\n", " ")
+        gamma_back2 = pg.evaluate("() => document.getElementById('mb-gamma').value")
+        record(
+            lane,
+            "aprs-load-restores",
+            "APRS loaded" in aprs_hud and gamma_back2 == "1.85",
+            f"hud={aprs_hud[:60]!r} gamma={gamma_back2}",
+        )
     record(lane, "console-clean", not errors, "; ".join(errors[:3])[:180])
 
 
