@@ -1,0 +1,14 @@
+name: quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    uses: Prekzursil/quality-zero-platform/.github/workflows/reusable-quality.yml@main

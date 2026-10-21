@@ -11,11 +11,13 @@ Usage:
     python buddhabrot.py tone [--pct 99.9] [--gamma 1.05] [--sat 1.15]
                               [--gr 1.0] [--gg 1.0] [--gb 1.0]
 """
+
 from __future__ import annotations
 
 import argparse
 import os
 import time
+from typing import Any
 
 import numpy as np
 
@@ -26,17 +28,23 @@ OUT = os.path.join(HERE, "out")
 XMIN, XMAX = -2.25, 1.15
 YMIN, YMAX = -1.70, 1.70
 
-CONFIGS = {
-    "full": dict(size=2048, channels=(
-        ("blue", 80, 36_000_000, 11),
-        ("green", 400, 24_000_000, 22),
-        ("red", 1500, 14_000_000, 33),
-    )),
-    "smoke": dict(size=512, channels=(
-        ("blue", 60, 2_000_000, 11),
-        ("green", 200, 1_200_000, 22),
-        ("red", 500, 600_000, 33),
-    )),
+CONFIGS: dict[str, dict[str, Any]] = {
+    "full": dict(
+        size=2048,
+        channels=(
+            ("blue", 80, 36_000_000, 11),
+            ("green", 400, 24_000_000, 22),
+            ("red", 1500, 14_000_000, 33),
+        ),
+    ),
+    "smoke": dict(
+        size=512,
+        channels=(
+            ("blue", 60, 2_000_000, 11),
+            ("green", 200, 1_200_000, 22),
+            ("red", 500, 600_000, 33),
+        ),
+    ),
 }
 
 
@@ -53,7 +61,9 @@ def inside_main_sets(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     return cardioid | bulb
 
 
-def escape_mask(cr: np.ndarray, ci: np.ndarray, max_iter: int, chunk: int = 32) -> np.ndarray:
+def escape_mask(
+    cr: np.ndarray, ci: np.ndarray, max_iter: int, chunk: int = 32
+) -> np.ndarray:
     """True where the orbit of c escapes (|z|^2 > 4) within max_iter.
 
     Compacts the still-alive arrays every `chunk` steps so the shrinkage from
@@ -85,8 +95,15 @@ def escape_mask(cr: np.ndarray, ci: np.ndarray, max_iter: int, chunk: int = 32) 
     return mask
 
 
-def plot_orbits(cr: np.ndarray, ci: np.ndarray, max_iter: int,
-                hist: np.ndarray, W: int, H: int, flush_at: int = 24_000_000) -> None:
+def plot_orbits(
+    cr: np.ndarray,
+    ci: np.ndarray,
+    max_iter: int,
+    hist: np.ndarray,
+    W: int,
+    H: int,
+    flush_at: int = 24_000_000,
+) -> None:
     """Histogram every pre-escape orbit point of the given escaping samples."""
     sx = W / (XMAX - XMIN)
     sy = H / (YMAX - YMIN)
@@ -120,8 +137,15 @@ def plot_orbits(cr: np.ndarray, ci: np.ndarray, max_iter: int,
         hist += np.bincount(np.concatenate(buf), minlength=W * H)
 
 
-def render_channel(name: str, max_iter: int, samples: int, seed: int,
-                   size: int, tag: str, batch: int = 3_000_000) -> np.ndarray:
+def render_channel(
+    name: str,
+    max_iter: int,
+    samples: int,
+    seed: int,
+    size: int,
+    tag: str,
+    batch: int = 3_000_000,
+) -> np.ndarray:
     os.makedirs(OUT, exist_ok=True)
     cache = os.path.join(OUT, f"hist_{tag}_{name}.npy")
     if os.path.exists(cache):
@@ -141,44 +165,71 @@ def render_channel(name: str, max_iter: int, samples: int, seed: int,
             esc = escape_mask(cr, ci, max_iter)
             plot_orbits(cr[esc], ci[esc], max_iter, hist, W, H)
             done += n
-            print(f"  [{name:<5}] {100.0 * done / samples:5.1f}%   {time.time() - t0:7.1f}s", flush=True)
+            print(
+                f"  [{name:<5}] {100.0 * done / samples:5.1f}%   {time.time() - t0:7.1f}s",
+                flush=True,
+            )
     hist = hist.reshape(H, W)[::-1]  # +imag up
     np.save(cache, hist)
     return hist
 
 
-def tone_channel(h: np.ndarray, plo: float, phi: float, gamma: float, gain: float) -> np.ndarray:
+def tone_channel(
+    h: np.ndarray, plo: float, phi: float, gamma: float, gain: float
+) -> np.ndarray:
     """Log-compress, anchor a black point at the plo-th percentile of lit pixels
     and a white point at the phi-th one, then gamma-shape what's in between."""
     v = np.log1p(h)
     pos = v[v > 0]
-    lo, hi = (np.percentile(pos, plo), np.percentile(pos, phi)) if pos.size else (0.0, 1.0)
+    lo, hi = (
+        (np.percentile(pos, plo), np.percentile(pos, phi)) if pos.size else (0.0, 1.0)
+    )
     return np.clip((v - lo) * gain / max(hi - lo, 1e-12), 0.0, 1.0) ** gamma
 
 
-def build_rgb(hists: dict, plo: float, phi: float, gamma: float, gains: dict, sat: float) -> np.ndarray:
-    rgb = np.stack([tone_channel(hists[k], plo, phi, gamma, gains[k])
-                    for k in ("red", "green", "blue")], axis=2)
+def build_rgb(
+    hists: dict, plo: float, phi: float, gamma: float, gains: dict, sat: float
+) -> np.ndarray:
+    rgb = np.stack(
+        [
+            tone_channel(hists[k], plo, phi, gamma, gains[k])
+            for k in ("red", "green", "blue")
+        ],
+        axis=2,
+    )
     if sat != 1.0:  # vibrance: push away from luminance
         lum = rgb @ np.array([0.2126, 0.7152, 0.0722])
         rgb = np.clip(lum[..., None] + sat * (rgb - lum[..., None]), 0.0, 1.0)
     return rgb
 
 
+_FONT_DIRS = (
+    [r"C:\Windows\Fonts"]
+    if os.name == "nt"
+    else [
+        "/usr/share/fonts/truetype/dejavu",
+        "/usr/share/fonts",
+        "/usr/local/share/fonts",
+    ]
+)
+
+
 def load_font(size: int, fonts_dir=None):
-    """Best-effort UI font; fonts_dir injectable for tests and odd platforms."""
+    """Best-effort UI font. Paths are platform constants (never environment
+    derived); fonts_dir lets tests and odd platforms inject an explicit dir."""
     from PIL import ImageFont
-    if fonts_dir is None:
-        fonts_dir = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts")
-    for name in ("segoeuil.ttf", "segoeui.ttf", "arial.ttf"):
-        path = os.path.join(fonts_dir, name)
-        if os.path.exists(path):
-            return ImageFont.truetype(path, size)
+
+    for d in [fonts_dir] if fonts_dir else _FONT_DIRS:
+        for name in ("segoeuil.ttf", "segoeui.ttf", "arial.ttf", "DejaVuSans.ttf"):
+            path = os.path.join(d, name)
+            if os.path.exists(path):
+                return ImageFont.truetype(path, size)
     return ImageFont.load_default()
 
 
 def make_poster(rgb_u8: np.ndarray, path: str, total_orbits: int) -> None:
     from PIL import Image, ImageDraw
+
     img = Image.fromarray(rgb_u8)
     s = img.width
     m = int(s * 0.055)
@@ -193,18 +244,29 @@ def make_poster(rgb_u8: np.ndarray, path: str, total_orbits: int) -> None:
     orbits_txt = f"{total_orbits:,}".replace(",", "\u2009")
     sub = f"z \u21a6 z\u00b2 + c    \u00b7    {orbits_txt} escaping orbits"
     y_line = m + s + int(s * 0.085)
-    d.line([(int(Wc * 0.32), y_line), (int(Wc * 0.68), y_line)], fill=(70, 70, 84), width=1)
+    d.line(
+        [(int(Wc * 0.32), y_line), (int(Wc * 0.68), y_line)], fill=(70, 70, 84), width=1
+    )
     y_title = y_line + int(s * 0.035)
-    d.text(((Wc - d.textlength(title, font=f_title)) / 2, y_title),
-           title, font=f_title, fill=(225, 223, 218))
+    d.text(
+        ((Wc - d.textlength(title, font=f_title)) / 2, y_title),
+        title,
+        font=f_title,
+        fill=(225, 223, 218),
+    )
     y_sub = y_title + int(s * 0.095)
-    d.text(((Wc - d.textlength(sub, font=f_sub)) / 2, y_sub),
-           sub, font=f_sub, fill=(128, 126, 134))
+    d.text(
+        ((Wc - d.textlength(sub, font=f_sub)) / 2, y_sub),
+        sub,
+        font=f_sub,
+        fill=(128, 126, 134),
+    )
     canvas.save(path)
 
 
 def save_outputs(hists: dict, tag: str, args) -> str:
     from PIL import Image
+
     os.makedirs(OUT, exist_ok=True)
     gains = {"red": args.gr, "green": args.gg, "blue": args.gb}
     rgb = build_rgb(hists, args.plo, args.pct, args.gamma, gains, args.sat)

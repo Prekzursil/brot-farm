@@ -3,6 +3,7 @@
 
 Usage: python topup.py NAME CROP_PX EXTRA_BLUE EXTRA_GREEN EXTRA_RED
 """
+
 from __future__ import annotations
 
 import os
@@ -13,7 +14,10 @@ import numpy as np
 import importlib.util
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-spec = importlib.util.spec_from_file_location("farm", os.path.join(HERE, "brot_farm.py"))
+spec = importlib.util.spec_from_file_location(
+    "farm", os.path.join(HERE, "brot_farm.py")
+)
+assert spec is not None and spec.loader is not None, "could not load brot_farm module"
 farm = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(farm)
 
@@ -25,8 +29,12 @@ def topup(name: str, crop_px: int, extra: list[int]):
     mx, my = (W0 - W) // 2, (H0 - H) // 2
     x0, x1, y0, y1 = f["plot"]
     ux, uy = (x1 - x0) / W0, (y1 - y0) / H0
-    f["plot"] = f["samp"] = (x0 + mx * ux, x0 + (mx + W) * ux,
-                             y0 + my * uy, y0 + (my + H) * uy)
+    f["plot"] = f["samp"] = (
+        x0 + mx * ux,
+        x0 + (mx + W) * ux,
+        y0 + my * uy,
+        y0 + (my + H) * uy,
+    )
     f["size"] = (W, H)
     print(f"[{name}] crop -> {W}x{H}, window {f['plot']}", flush=True)
     seed_base = sum(ord(ch) for ch in name) * 13
@@ -37,7 +45,7 @@ def topup(name: str, crop_px: int, extra: list[int]):
         cache = os.path.join(HERE, "out", f"hist_{name}_{ci}.npy")
         hist2d = np.load(cache)
         if hist2d.shape == (H0, W0):
-            hist = hist2d[::-1][my:my + H, mx:mx + W].ravel().copy()
+            hist = hist2d[::-1][my : my + H, mx : mx + W].ravel().copy()
         elif hist2d.shape == (H, W):
             hist = hist2d[::-1].ravel().copy()  # already cropped by an earlier top-up
         else:
@@ -64,7 +72,10 @@ def topup(name: str, crop_px: int, extra: list[int]):
                     ax, ay = f["step"](ax, ay, cx, cy)
                 farm.plot_orbits(f, ax, ay, cx, cy, cap, hist, W, H)
                 done += n
-                print(f"  [{name}.{farm.CHAN_NAMES[ci]:<5}] +{100.0 * done / add:5.1f}%  {time.time() - t0:7.1f}s", flush=True)
+                print(
+                    f"  [{name}.{farm.CHAN_NAMES[ci]:<5}] +{100.0 * done / add:5.1f}%  {time.time() - t0:7.1f}s",
+                    flush=True,
+                )
         np.save(cache, hist.reshape(H, W)[::-1])
     print(f"[{name}] top-up done", flush=True)
 

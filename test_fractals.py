@@ -4,7 +4,6 @@ Validates the vectorized machinery against scalar/complex-arithmetic references,
 checks invariants (bounds, monotonicity, determinism, culling soundness), and
 runs a tiny end-to-end render.
 """
-import importlib
 
 import numpy as np
 import pytest
@@ -22,7 +21,10 @@ def rand_pts(n, lo=-1.5, hi=1.5):
 
 # --------------------------------------------------------------- step rules
 
-@pytest.mark.parametrize("fname,power", [("s_std", 2), ("s_z3", 3), ("s_z4", 4), ("s_z5", 5)])
+
+@pytest.mark.parametrize(
+    "fname,power", [("s_std", 2), ("s_z3", 3), ("s_z4", 4), ("s_z5", 5)]
+)
 def test_power_steps_match_complex_arithmetic(fname, power):
     x, y = rand_pts(512)
     cx, cy = rand_pts(512)
@@ -32,11 +34,14 @@ def test_power_steps_match_complex_arithmetic(fname, power):
     assert np.allclose(gy, z.imag, atol=1e-9)
 
 
-@pytest.mark.parametrize("fname,fn", [
-    ("s_sinz", np.sin),
-    ("s_cosz", np.cos),
-    ("s_tricorn", None),  # conj(z)^2 + c
-])
+@pytest.mark.parametrize(
+    "fname,fn",
+    [
+        ("s_sinz", np.sin),
+        ("s_cosz", np.cos),
+        ("s_tricorn", None),  # conj(z)^2 + c
+    ],
+)
 def test_entire_and_conjugate_steps_match_complex(fname, fn):
     x, y = rand_pts(512, -2, 2)
     cx, cy = rand_pts(512)
@@ -60,14 +65,21 @@ def test_std_step_matches_buddhabrot_module():
 
 # ---------------------------------------------------------- escape masks
 
-@pytest.mark.parametrize("name,min_agree", [
-    ("z3", 0.97), ("ship", 0.97), ("tricorn", 0.97), ("cosy", 0.97),
-    # cosfull: |y| > 100 crossing is not strictly monotone (x' = cos(x^2-y^2)+cx
-    # can pass through ~0 and let y hover), so the chunked check can miss a brief
-    # excursion the per-step reference catches -- benign for rendering, since any
-    # genuine crossing diverges in practice.
-    ("cosfull", 0.90),
-])
+
+@pytest.mark.parametrize(
+    "name,min_agree",
+    [
+        ("z3", 0.97),
+        ("ship", 0.97),
+        ("tricorn", 0.97),
+        ("cosy", 0.97),
+        # cosfull: |y| > 100 crossing is not strictly monotone (x' = cos(x^2-y^2)+cx
+        # can pass through ~0 and let y hover), so the chunked check can miss a brief
+        # excursion the per-step reference catches -- benign for rendering, since any
+        # genuine crossing diverges in practice.
+        ("cosfull", 0.90),
+    ],
+)
 def test_escape_mask_matches_scalar_reference(name, min_agree):
     f = farm.BY_NAME[name]
     x0, y0 = rand_pts(300, -1.0, 1.0)
@@ -81,15 +93,18 @@ def test_escape_mask_matches_scalar_reference(name, min_agree):
         for i in range(len(x0)):
             x, y = float(x0[i]), float(y0[i])
             for _ in range(cap):
-                nx, ny = f["step"](np.array([x]), np.array([y]),
-                                   np.array([cx[i]]), np.array([cy[i]]))
+                nx, ny = f["step"](
+                    np.array([x]), np.array([y]), np.array([cx[i]]), np.array([cy[i]])
+                )
                 x, y = float(nx[0]), float(ny[0])
                 if f["gone"](np.array([x]), np.array([y]))[0]:
                     ref[i] = True
                     break
     agree = (got == ref).mean()
     assert agree >= min_agree, f"{name}: classification disagreement {1 - agree:.2%}"
-    assert not (got & ~ref).any(), "vector path invented an escape the scalar path missed"
+    assert not (got & ~ref).any(), (
+        "vector path invented an escape the scalar path missed"
+    )
 
 
 def test_escape_mask_marks_known_points():
@@ -103,6 +118,7 @@ def test_escape_mask_marks_known_points():
 
 # ---------------------------------------------------------------- culling
 
+
 def test_culled_region_never_escapes():
     pts = RNG.uniform(-1.2, 1.2, (4000, 2))
     inside = bb.inside_main_sets(pts[:, 0], pts[:, 1])
@@ -115,6 +131,7 @@ def test_culled_region_never_escapes():
 
 
 # ------------------------------------------------------------- tone curves
+
 
 def test_tone_channel_monotonic_bounded():
     h = np.zeros((64, 64))
@@ -133,6 +150,7 @@ def test_tone_channel_black_point():
 
 
 # ------------------------------------------------------------ plot orbits
+
 
 def test_plot_orbits_counts_match_manual_trace():
     f = farm.BY_NAME["z3"]
@@ -153,7 +171,9 @@ def test_plot_orbits_counts_match_manual_trace():
             row = int((y - py0) / (py1 - py0) * H)
             if 0 <= col < W and 0 <= row < H:
                 expect[row * W + col] = expect.get(row * W + col, 0) + 1
-            nx, ny = f["step"](np.array([x]), np.array([y]), np.array([0.9]), np.array([0.1]))
+            nx, ny = f["step"](
+                np.array([x]), np.array([y]), np.array([0.9]), np.array([0.1])
+            )
             x, y = float(nx[0]), float(ny[0])
             if f["gone"](np.array([x]), np.array([y]))[0]:
                 break
@@ -171,13 +191,16 @@ def test_plot_orbits_stays_in_bounds():
     x0, y0 = rand_pts(n, -1.8, 1.2)
     with np.errstate(over="ignore", invalid="ignore"):
         esc = farm.escape_mask(f, x0, y0, x0.copy(), y0.copy(), cap)
-        farm.plot_orbits(f, x0[esc], y0[esc], x0[esc].copy(), y0[esc].copy(), cap, hist, W, H)
+        farm.plot_orbits(
+            f, x0[esc], y0[esc], x0[esc].copy(), y0[esc].copy(), cap, hist, W, H
+        )
     assert hist.min() >= 0.0
     assert hist.sum() > 0
     assert hist.sum() <= n * cap  # can never plot more points than samples x cap
 
 
 # ---------------------------------------------------------- configuration
+
 
 def test_farm_configs_are_sane():
     for f in farm.FRACS:
@@ -195,11 +218,13 @@ def test_farm_configs_are_sane():
 
 def test_module_imports():
     import cosbrot  # renamed from mutant_brot.py; must stay importable
+
     assert hasattr(cosbrot, "step")
     assert hasattr(cosbrot, "escape_mask")
 
 
 # -------------------------------------------------- determinism & symmetry
+
 
 def _tiny_render(f, size, samples, seed, cap_index=0):
     cap, _ = f["chans"][cap_index]
@@ -211,7 +236,9 @@ def _tiny_render(f, size, samples, seed, cap_index=0):
         ax = rng.uniform(sx0, sx1, samples)
         ay = rng.uniform(sy0, sy1, samples)
         esc = farm.escape_mask(f, ax, ay, ax.copy(), ay.copy(), cap)
-        farm.plot_orbits(f, ax[esc], ay[esc], ax[esc].copy(), ay[esc].copy(), cap, hist, W, H)
+        farm.plot_orbits(
+            f, ax[esc], ay[esc], ax[esc].copy(), ay[esc].copy(), cap, hist, W, H
+        )
     return hist.reshape(H, W)
 
 
@@ -237,6 +264,7 @@ def test_mirror_symmetry_of_equivariant_map():
 
 
 # ------------------------------------------------------------- end-to-end
+
 
 def test_end_to_end_tiny_render(tmp_path, monkeypatch):
     monkeypatch.setattr(bb, "OUT", str(tmp_path))

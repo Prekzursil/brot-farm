@@ -2,7 +2,7 @@
 including CLI entry points (via monkeypatched argv and tiny configs),
 poster/tone outputs, caching paths, and the topup tool.
 """
-import importlib
+
 import os
 import shutil
 import sys
@@ -19,10 +19,20 @@ import topup
 RNG = np.random.default_rng(1234)
 
 TINY_FARM = dict(
-    name="tiny", title="T I N Y", sub="x\u2032 = x\u00b2 \u2212 y\u00b2",
-    step=farm.s_std, gone=farm.g_z, chunk=8, cull=False, invert=False, julia=None,
-    samp=(-1.5, 1.5, -1.5, 1.5), plot=(-1.5, 1.5, -1.5, 1.5), size=(96, 96),
-    chans=((30, 3_000), (30, 2_000), (30, 1_000)), batch=1_000,
+    name="tiny",
+    title="T I N Y",
+    sub="x\u2032 = x\u00b2 \u2212 y\u00b2",
+    step=farm.s_std,
+    gone=farm.g_z,
+    chunk=8,
+    cull=False,
+    invert=False,
+    julia=None,
+    samp=(-1.5, 1.5, -1.5, 1.5),
+    plot=(-1.5, 1.5, -1.5, 1.5),
+    size=(96, 96),
+    chans=((30, 3_000), (30, 2_000), (30, 1_000)),
+    batch=1_000,
 )
 
 
@@ -33,8 +43,19 @@ def run_cli(mod, argv, monkeypatch):
 
 # ----------------------------------------------------- uncovered step rules
 
-@pytest.mark.parametrize("fname", ["s_ship", "s_celtic", "s_buffalo",
-                                   "s_tanmut", "s_sinhmut", "s_expmut", "s_cosfull"])
+
+@pytest.mark.parametrize(
+    "fname",
+    [
+        "s_ship",
+        "s_celtic",
+        "s_buffalo",
+        "s_tanmut",
+        "s_sinhmut",
+        "s_expmut",
+        "s_cosfull",
+    ],
+)
 def test_remaining_step_rules_run(fname):
     x, y = RNG.uniform(-0.8, 0.8, 64), RNG.uniform(-0.8, 0.8, 64)
     cx, cy = RNG.uniform(-0.5, 0.5, 64), RNG.uniform(-0.5, 0.5, 64)
@@ -43,19 +64,23 @@ def test_remaining_step_rules_run(fname):
 
 
 def test_celtic_matches_absolute_value_semantics():
-    x = np.array([0.5, -0.25]); y = np.array([0.3, 0.1])
+    x = np.array([0.5, -0.25])
+    y = np.array([0.3, 0.1])
     gx, gy = farm.s_celtic(x, y, np.zeros(2), np.zeros(2))
     assert np.allclose(gx, np.abs(x * x - y * y))
     assert np.allclose(gy, 2 * x * y)
 
 
-@pytest.mark.parametrize("gone,xbad,ybad", [
-    (farm.g_big, 2000.0, 0.0),   # |z| > 1e6
-    (farm.g_big, np.nan, 0.0),   # NaN
-    (farm.g_y, 0.0, 200.0),      # |y| > 100
-    (farm.g_x, 200.0, 0.0),      # |x| > 100
-    (farm.g_z, 2.1, 0.0),        # |z| > 2
-])
+@pytest.mark.parametrize(
+    "gone,xbad,ybad",
+    [
+        (farm.g_big, 2000.0, 0.0),  # |z| > 1e6
+        (farm.g_big, np.nan, 0.0),  # NaN
+        (farm.g_y, 0.0, 200.0),  # |y| > 100
+        (farm.g_x, 200.0, 0.0),  # |x| > 100
+        (farm.g_z, 2.1, 0.0),  # |z| > 2
+    ],
+)
 def test_gone_predicates_fire(gone, xbad, ybad):
     assert bool(gone(np.array([xbad]), np.array([ybad]))[0])
     assert not bool(gone(np.array([0.1]), np.array([0.1]))[0])
@@ -69,10 +94,11 @@ def test_g_z_nan_escape_regression():
 
 # ------------------------------------------------------- buddhabrot extras
 
+
 def test_escape_mask_all_prisoners_branch():
     pts = RNG.uniform(-0.2, 0.1, (500, 2))  # deep inside the main cardioid
     m = bb.escape_mask(pts[:, 0].copy(), pts[:, 1].copy(), 60)
-    assert not m.any()          # and the empty-escaped-parts branch was taken
+    assert not m.any()  # and the empty-escaped-parts branch was taken
 
 
 def test_tone_channel_empty_histogram():
@@ -88,8 +114,9 @@ def test_build_rgb_sat_one_skips_vibrance():
     assert b.shape == (16, 16, 3)
 
 
+# platform constants only -- no environment-derived paths (CodeQL path-injection)
 FONT_PROBES = [
-    os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "arial.ttf"),
+    "C:\\Windows\\Fonts\\arial.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     "/usr/share/fonts/dejavu/DejaVuSans.ttf",
     "/System/Library/Fonts/Helvetica.ttc",
@@ -105,7 +132,9 @@ def test_load_font_truetype_and_default_branches(tmp_path):
     shutil.copy(source, fonts / "arial.ttf")
     real = bb.load_font(14, fonts_dir=str(fonts))
     fallback = bb.load_font(14, fonts_dir=str(tmp_path / "empty"))
-    assert real is not None and fallback is not None
+    # the truetype branch must have loaded OUR copied file, not a default
+    assert os.path.basename(str(getattr(real, "path", ""))) == "arial.ttf"
+    assert fallback is not None
 
 
 def test_make_poster_writes_file(tmp_path):
@@ -117,8 +146,18 @@ def test_make_poster_writes_file(tmp_path):
 
 def test_buddhabrot_cli_render_then_tone(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(bb, "OUT", str(tmp_path))
-    monkeypatch.setitem(bb.CONFIGS, "smoke", dict(size=64, channels=(
-        ("blue", 25, 2_000, 1), ("green", 25, 1_500, 2), ("red", 25, 1_000, 3))))
+    monkeypatch.setitem(
+        bb.CONFIGS,
+        "smoke",
+        dict(
+            size=64,
+            channels=(
+                ("blue", 25, 2_000, 1),
+                ("green", 25, 1_500, 2),
+                ("red", 25, 1_000, 3),
+            ),
+        ),
+    )
     run_cli(bb, ["render", "--smoke"], monkeypatch)
     assert (tmp_path / "buddhabrot_smoke.png").exists()
     assert (tmp_path / "buddhabrot_smoke_poster.png").exists()
@@ -130,16 +169,27 @@ def test_buddhabrot_cli_render_then_tone(tmp_path, monkeypatch, capsys):
 def test_buddhabrot_cli_tone_only_creates_out_dir(tmp_path, monkeypatch):
     fresh = tmp_path / "fresh"
     monkeypatch.setattr(bb, "OUT", str(fresh))
-    monkeypatch.setitem(bb.CONFIGS, "smoke", dict(size=48, channels=(
-        ("blue", 20, 1_200, 1), ("green", 20, 900, 2), ("red", 20, 700, 3))))
-    run_cli(bb, ["render", "--smoke"], monkeypatch)   # populate caches
+    monkeypatch.setitem(
+        bb.CONFIGS,
+        "smoke",
+        dict(
+            size=48,
+            channels=(
+                ("blue", 20, 1_200, 1),
+                ("green", 20, 900, 2),
+                ("red", 20, 700, 3),
+            ),
+        ),
+    )
+    run_cli(bb, ["render", "--smoke"], monkeypatch)  # populate caches
     (fresh / "buddhabrot_smoke.png").unlink()
     (fresh / "buddhabrot_smoke_poster.png").unlink()
-    run_cli(bb, ["tone", "--smoke"], monkeypatch)     # tone-only: dir exists, no crash
+    run_cli(bb, ["tone", "--smoke"], monkeypatch)  # tone-only: dir exists, no crash
     assert (fresh / "buddhabrot_smoke.png").exists()
 
 
 # ---------------------------------------------------------- brot_farm extras
+
 
 def test_farm_write_outputs_without_args(tmp_path, monkeypatch):
     monkeypatch.setattr(farm, "OUT", str(tmp_path))
@@ -184,13 +234,15 @@ def test_farm_cli_qc_with_mixed_outputs(tmp_path, monkeypatch, capsys):
     other = dict(TINY_FARM, name="ghost")
     monkeypatch.setattr(farm, "FRACS", [TINY_FARM, other])
     Image.fromarray((RNG.random((32, 32, 3)) * 255).astype(np.uint8)).save(
-        tmp_path / "brot_tiny.png")
+        tmp_path / "brot_tiny.png"
+    )
     run_cli(farm, ["qc"], monkeypatch)
     out = capsys.readouterr().out
     assert "MISSING" in out and "ghost" in out and "tiny" in out
 
 
 # ------------------------------------------------------------ cosbrot CLI
+
 
 def test_cosbrot_step_gone_and_masks():
     x, y = RNG.uniform(-1, 1, 128), RNG.uniform(-1, 1, 128)
@@ -208,8 +260,18 @@ def test_cosbrot_step_gone_and_masks():
 
 def test_cosbrot_cli_smoke(tmp_path, monkeypatch):
     monkeypatch.setattr(cosbrot, "OUT", str(tmp_path))
-    monkeypatch.setitem(cosbrot.CONFIGS, "smoke", dict(size=64, channels=(
-        ("blue", 40, 1_500, 101), ("green", 60, 1_000, 202), ("red", 80, 700, 303))))
+    monkeypatch.setitem(
+        cosbrot.CONFIGS,
+        "smoke",
+        dict(
+            size=64,
+            channels=(
+                ("blue", 40, 1_500, 101),
+                ("green", 60, 1_000, 202),
+                ("red", 80, 700, 303),
+            ),
+        ),
+    )
     run_cli(cosbrot, ["render", "--smoke"], monkeypatch)
     assert (tmp_path / "cosbrot_smoke.png").exists()
     assert (tmp_path / "cosbrot_smoke_poster.png").exists()
@@ -225,12 +287,20 @@ def test_cosbrot_render_channel_cache_roundtrip(tmp_path, monkeypatch):
 # ---------------------------------------------------------------- topup
 
 FAKE = dict(
-    name="fake", title="F A K E", sub="unit-test map",
+    name="fake",
+    title="F A K E",
+    sub="unit-test map",
     step=lambda x, y, cx, cy: (x * x - y * y + cx, 2.0 * x * y + cy),
-    gone=lambda x, y: x * x + y * y > 4.0, chunk=8,
-    cull=False, invert=False, julia=None,
-    samp=(-1.2, 1.2, -1.2, 1.2), plot=(-1.2, 1.2, -1.2, 1.2), size=(96, 96),
-    chans=((40, 1_000), (40, 800), (40, 600)), batch=400,
+    gone=lambda x, y: x * x + y * y > 4.0,
+    chunk=8,
+    cull=False,
+    invert=False,
+    julia=None,
+    samp=(-1.2, 1.2, -1.2, 1.2),
+    plot=(-1.2, 1.2, -1.2, 1.2),
+    size=(96, 96),
+    chans=((40, 1_000), (40, 800), (40, 600)),
+    batch=400,
 )
 
 
@@ -249,7 +319,7 @@ def test_topup_crop_and_accumulate(tmp_path, monkeypatch, capsys):
     out = tmp_path / "out"
     for ci in range(3):
         h = np.load(out / f"hist_fake_{ci}.npy")
-        assert h.shape == (64, 64)          # cropped and saved back
+        assert h.shape == (64, 64)  # cropped and saved back
     assert "top-up done" in capsys.readouterr().out
     topup.farm.BY_NAME.pop("fake", None)
 
@@ -261,7 +331,7 @@ def test_topup_is_idempotent_on_cropped_cache(tmp_path, monkeypatch):
     try:
         topup.topup("fake", 64, [300, 200, 100])
         first = np.load(tmp_path / "out" / "hist_fake_0.npy").copy()
-        topup.topup("fake", 64, [300, 200, 100])   # now already cropped
+        topup.topup("fake", 64, [300, 200, 100])  # now already cropped
         second = np.load(tmp_path / "out" / "hist_fake_0.npy")
         assert second.shape == first.shape == (64, 64)
         assert second.sum() >= first.sum()
@@ -298,6 +368,7 @@ def test_topup_cli_argv_parsing(tmp_path, monkeypatch):
 
 # ---------------------------------------------- flush & mode branches
 
+
 def test_plot_orbits_flush_branch_all_modules():
     for mod, args in ((bb, ()), (farm, None), (cosbrot, ())):
         hist = np.zeros(32 * 32)
@@ -308,8 +379,18 @@ def test_plot_orbits_flush_branch_all_modules():
             if mod is farm:
                 f = dict(TINY_FARM, size=(32, 32), plot=(-1.5, 1.5, -1.5, 1.5))
                 esc = farm.escape_mask(f, x0, y0, x0.copy(), y0.copy(), 40)
-                farm.plot_orbits(f, x0[esc], y0[esc], x0[esc].copy(), y0[esc].copy(),
-                                 40, hist, 32, 32, flush_at=10)
+                farm.plot_orbits(
+                    f,
+                    x0[esc],
+                    y0[esc],
+                    x0[esc].copy(),
+                    y0[esc].copy(),
+                    40,
+                    hist,
+                    32,
+                    32,
+                    flush_at=10,
+                )
             elif mod is bb:
                 esc = bb.escape_mask(x0.copy(), y0.copy(), 40)
                 bb.plot_orbits(x0[esc], y0[esc], 40, hist, 32, 32, flush_at=10)
@@ -323,7 +404,14 @@ def test_farm_julia_cull_invert_render_modes(tmp_path, monkeypatch):
     monkeypatch.setattr(farm, "OUT", str(tmp_path))
     cfgs = []
     for name, extra in (
-        ("tjulia", dict(julia=(-0.7, 0.27), samp=(-1.2, 1.2, -1.2, 1.2), plot=(-1.2, 1.2, -1.2, 1.2))),
+        (
+            "tjulia",
+            dict(
+                julia=(-0.7, 0.27),
+                samp=(-1.2, 1.2, -1.2, 1.2),
+                plot=(-1.2, 1.2, -1.2, 1.2),
+            ),
+        ),
         ("tcull", dict(cull=True)),
         ("tanti", dict(invert=True)),
     ):
@@ -339,13 +427,15 @@ def test_topup_julia_and_cull_and_skip_branches(tmp_path, monkeypatch):
     monkeypatch.setattr(topup, "HERE", str(tmp_path))
     out = tmp_path / "out"
     out.mkdir(exist_ok=True)
-    for name, extra in (("fjulia", dict(julia=(-0.7, 0.27))),
-                        ("fcull", dict(cull=True))):
+    for name, extra in (
+        ("fjulia", dict(julia=(-0.7, 0.27))),
+        ("fcull", dict(cull=True)),
+    ):
         f = dict(FAKE, name=name, **extra)
         for ci in range(3):
             np.save(out / f"hist_{name}_{ci}.npy", RNG.random((96, 96)) * 20)
         topup.farm.BY_NAME[name] = f
-        topup.topup(name, 64, [300, 0, 0])   # zero extras exercise the skip branch
+        topup.topup(name, 64, [300, 0, 0])  # zero extras exercise the skip branch
     for name in ("fjulia", "fcull"):
         assert (out / f"hist_{name}_0.npy").exists()
         topup.farm.BY_NAME.pop(name, None)
@@ -359,9 +449,9 @@ def test_topup_already_cropped_with_fresh_config(tmp_path, monkeypatch):
     monkeypatch.setattr(topup, "HERE", str(tmp_path))
     topup.farm.BY_NAME["fake"] = dict(FAKE)
     try:
-        topup.topup("fake", 64, [300, 200, 100])   # mutates its config + crops cache
-        topup.farm.BY_NAME["fake"] = dict(FAKE)    # fresh config, cache already 64x64
-        topup.topup("fake", 64, [300, 200, 100])   # -> already-cropped elif path
+        topup.topup("fake", 64, [300, 200, 100])  # mutates its config + crops cache
+        topup.farm.BY_NAME["fake"] = dict(FAKE)  # fresh config, cache already 64x64
+        topup.topup("fake", 64, [300, 200, 100])  # -> already-cropped elif path
         h = np.load(out / "hist_fake_0.npy")
         assert h.shape == (64, 64)
     finally:

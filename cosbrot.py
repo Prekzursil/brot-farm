@@ -12,11 +12,13 @@ Buddhabrot, so the density figure comes out lopsided.
 Usage:
     python mutant_brot.py render [--smoke]
 """
+
 from __future__ import annotations
 
 import argparse
 import os
 import time
+from typing import Any
 
 import numpy as np
 from buddhabrot import build_rgb, load_font
@@ -24,23 +26,29 @@ from buddhabrot import build_rgb, load_font
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out")
 
-CXMIN, CXMAX = -1.2, 1.2   # c sampling window
+CXMIN, CXMAX = -1.2, 1.2  # c sampling window
 CYMIN, CYMAX = -1.2, 1.2
-XMIN, XMAX = -3.0, 3.0     # orbit plot window
+XMIN, XMAX = -3.0, 3.0  # orbit plot window
 YMIN, YMAX = -3.0, 3.0
-RY2 = 100.0 ** 2           # |y| escape threshold squared
+RY2 = 100.0**2  # |y| escape threshold squared
 
-CONFIGS = {
-    "full": dict(size=2048, channels=(
-        ("blue", 60, 18_000_000, 101),
-        ("green", 300, 12_000_000, 202),
-        ("red", 1000, 8_000_000, 303),
-    )),
-    "smoke": dict(size=512, channels=(
-        ("blue", 60, 1_500_000, 101),
-        ("green", 300, 800_000, 202),
-        ("red", 1000, 400_000, 303),
-    )),
+CONFIGS: dict[str, dict[str, Any]] = {
+    "full": dict(
+        size=2048,
+        channels=(
+            ("blue", 60, 18_000_000, 101),
+            ("green", 300, 12_000_000, 202),
+            ("red", 1000, 8_000_000, 303),
+        ),
+    ),
+    "smoke": dict(
+        size=512,
+        channels=(
+            ("blue", 60, 1_500_000, 101),
+            ("green", 300, 800_000, 202),
+            ("red", 1000, 400_000, 303),
+        ),
+    ),
 }
 
 
@@ -126,7 +134,10 @@ def render_channel(name, max_iter, samples, seed, size, tag, batch=3_000_000):
             esc = escape_mask(cr, ci, max_iter)
             plot_orbits(cr[esc], ci[esc], max_iter, hist, W, H)
             done += n
-            print(f"  [{name:<5}] {100.0 * done / samples:5.1f}%   {time.time() - t0:7.1f}s", flush=True)
+            print(
+                f"  [{name:<5}] {100.0 * done / samples:5.1f}%   {time.time() - t0:7.1f}s",
+                flush=True,
+            )
     hist = hist.reshape(H, W)[::-1]
     np.save(cache, hist)
     return hist
@@ -134,6 +145,7 @@ def render_channel(name, max_iter, samples, seed, size, tag, batch=3_000_000):
 
 def make_poster(rgb_u8, path, total_orbits):
     from PIL import Image, ImageDraw
+
     img = Image.fromarray(rgb_u8)
     s = img.width
     m = int(s * 0.055)
@@ -148,11 +160,23 @@ def make_poster(rgb_u8, path, total_orbits):
     orbits_txt = f"{total_orbits:,}".replace(",", "\u2009")
     sub = f"x\u2032 = cos x\u00b2 \u2212 y    \u00b7    y\u2032 = 2xy    \u00b7    {orbits_txt} escaping orbits"
     y_line = m + s + int(s * 0.085)
-    d.line([(int(Wc * 0.32), y_line), (int(Wc * 0.68), y_line)], fill=(70, 70, 84), width=1)
+    d.line(
+        [(int(Wc * 0.32), y_line), (int(Wc * 0.68), y_line)], fill=(70, 70, 84), width=1
+    )
     y_title = y_line + int(s * 0.035)
-    d.text(((Wc - d.textlength(title, font=f_title)) / 2, y_title), title, font=f_title, fill=(225, 223, 218))
+    d.text(
+        ((Wc - d.textlength(title, font=f_title)) / 2, y_title),
+        title,
+        font=f_title,
+        fill=(225, 223, 218),
+    )
     y_sub = y_title + int(s * 0.095)
-    d.text(((Wc - d.textlength(sub, font=f_sub)) / 2, y_sub), sub, font=f_sub, fill=(128, 126, 134))
+    d.text(
+        ((Wc - d.textlength(sub, font=f_sub)) / 2, y_sub),
+        sub,
+        font=f_sub,
+        fill=(128, 126, 134),
+    )
     canvas.save(path)
 
 
@@ -182,9 +206,14 @@ def main():
     u8 = (rgb * 255.0 + 0.5).astype(np.uint8)
     suffix = "" if tag == "full" else f"_{tag}"
     from PIL import Image
+
     main_path = os.path.join(OUT, f"cosbrot{suffix}.png")
     Image.fromarray(u8).save(main_path, optimize=True)
-    make_poster(u8, os.path.join(OUT, f"cosbrot{suffix}_poster.png"), sum(c[2] for c in cfg["channels"]))
+    make_poster(
+        u8,
+        os.path.join(OUT, f"cosbrot{suffix}_poster.png"),
+        sum(c[2] for c in cfg["channels"]),
+    )
     print("wrote", main_path, flush=True)
 
 
