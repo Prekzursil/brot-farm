@@ -565,29 +565,30 @@ def main():
         write_outputs(f, hists, args)
         return
 
-    if args.cmd == "qc":
-        from PIL import Image
+    # args.cmd == "qc" is the remaining choice (argparse guarantees it;
+    # the render/tone branches above both return).
+    from PIL import Image
 
+    print(
+        f"{'name':<9} {'size':<11} {'mean':>5} {'vis%':>4} {'sym':>5} {'com_x':>5} {'com_y':>5}"
+    )
+    for f in FRACS:
+        p = os.path.join(OUT, f"brot_{f['name']}.png")
+        if not os.path.exists(p):
+            print(f"{f['name']:<9} MISSING")
+            continue
+        a = np.asarray(Image.open(p)).astype(float) / 255.0
+        lum = a.mean(axis=2)
+        H, W = lum.shape
+        top, bot = lum[: H // 2], lum[H // 2 :][::-1]
+        sym = np.corrcoef(top.ravel(), bot.ravel())[0, 1]
+        ys, xs = np.mgrid[0:H, 0:W]
+        wgt = np.where(lum > 0.15, lum, 0)
+        comx = (wgt * xs).sum() / max(wgt.sum(), 1e-9) / W
+        comy = (wgt * ys).sum() / max(wgt.sum(), 1e-9) / H
         print(
-            f"{'name':<9} {'size':<11} {'mean':>5} {'vis%':>4} {'sym':>5} {'com_x':>5} {'com_y':>5}"
+            f"{f['name']:<9} {W}x{H:<7} {lum.mean():5.3f} {100 * (lum > 0.05).mean():3.0f} {sym:5.2f} {comx:5.2f} {comy:5.2f}"
         )
-        for f in FRACS:
-            p = os.path.join(OUT, f"brot_{f['name']}.png")
-            if not os.path.exists(p):
-                print(f"{f['name']:<9} MISSING")
-                continue
-            a = np.asarray(Image.open(p)).astype(float) / 255.0
-            lum = a.mean(axis=2)
-            H, W = lum.shape
-            top, bot = lum[: H // 2], lum[H // 2 :][::-1]
-            sym = np.corrcoef(top.ravel(), bot.ravel())[0, 1]
-            ys, xs = np.mgrid[0:H, 0:W]
-            wgt = np.where(lum > 0.15, lum, 0)
-            comx = (wgt * xs).sum() / max(wgt.sum(), 1e-9) / W
-            comy = (wgt * ys).sum() / max(wgt.sum(), 1e-9) / H
-            print(
-                f"{f['name']:<9} {W}x{H:<7} {lum.mean():5.3f} {100 * (lum > 0.05).mean():3.0f} {sym:5.2f} {comx:5.2f} {comy:5.2f}"
-            )
 
 
 if __name__ == "__main__":  # pragma: no cover

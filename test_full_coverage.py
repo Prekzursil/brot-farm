@@ -457,3 +457,32 @@ def test_topup_already_cropped_with_fresh_config(tmp_path, monkeypatch):
         assert h.shape == (64, 64)
     finally:
         topup.farm.BY_NAME.pop("fake", None)
+
+
+def test_plot_orbits_all_out_of_window_branches():
+    # Points that live entirely OUTSIDE the plot window exercise the
+    # `if inb.any()` false path per iteration and the empty final
+    # `if buffered:` flush guard. |z|=50 escapes on the first step for the
+    # g_z maps, so the loop plots once (out of window), then exits empty.
+    for mod in (bb, farm, cosbrot):
+        hist = np.zeros(16 * 16)
+        x0 = np.array([50.0])
+        y0 = np.array([0.0])
+        with np.errstate(over="ignore", invalid="ignore"):
+            if mod is farm:
+                f = dict(TINY_FARM, plot=(-1.5, 1.5, -1.5, 1.5))
+                mod.plot_orbits(
+                    f, x0.copy(), y0.copy(), x0.copy(), y0.copy(), 10, hist, 16, 16
+                )
+            elif mod is bb:
+                mod.plot_orbits(x0.copy(), y0.copy(), 10, hist, 16, 16)
+            else:
+                mod.plot_orbits(x0.copy(), y0.copy(), 10, hist, 16, 16)
+        assert hist.sum() == 0  # nothing in-window was ever plotted
+
+
+def test_cosbrot_escape_mask_no_escapers_branch():
+    # c = 0 has a bounded orbit for the cos mutation (fixed point of
+    # x = cos(x^2)), so the `if escaped:` false path is taken.
+    m = cosbrot.escape_mask(np.zeros(8), np.zeros(8), 80)
+    assert not m.any()

@@ -4,6 +4,7 @@ source =
     cosbrot
     brot_farm
     topup
+branch = True
 
 [report]
 fail_under = 100
