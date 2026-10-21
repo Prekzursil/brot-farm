@@ -3,6 +3,7 @@
 [![CI](https://github.com/Prekzursil/brot-farm/actions/workflows/ci.yml/badge.svg)](https://github.com/Prekzursil/brot-farm/actions/workflows/ci.yml)
 [![Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://prekzursil.github.io/brot-farm/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/Prekzursil/brot-farm/actions/workflows/ci.yml)
 
 **Long-exposure photographs of mathematical escape.** A Buddhabrot family renderer:
 instead of asking *"does this point escape?"*, it asks *"where does it travel on the way out?"*
@@ -84,10 +85,12 @@ percentile tone anchors, benchmarks, and the alternatives not taken — lives in
 ## Tests & CI
 
 ```bash
-python -m pytest -q          # unit tests: step rules vs complex arithmetic, escape
-                             # classification vs scalar reference, tone monotonicity,
-                             # histogram bounds, culling soundness, seed determinism,
-                             # mirror-symmetry law, plus a tiny end-to-end render
+python -m pytest --cov       # 61 tests at 100% line coverage (enforced by CI):
+                             # step rules vs complex arithmetic, escape classification
+                             # vs scalar reference, tone monotonicity, histogram bounds,
+                             # culling soundness, seed determinism, mirror-symmetry law,
+                             # CLI entry points, caching paths, the topup tool, and a
+                             # tiny end-to-end render
 ```
 
 CI runs the suite on Python 3.11–3.13 (`.github/workflows/ci.yml`); Pages deploys `docs/`

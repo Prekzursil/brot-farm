@@ -30,13 +30,21 @@ document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
   const W = 560, H = Math.round(W * img.naturalHeight / img.naturalWidth);
   const src = document.createElement("canvas");
   src.width = W; src.height = H;
-  src.getContext("2d").drawImage(img, 0, 0, W, H);
-  const base = src.getContext("2d").getImageData(0, 0, W, H);
+  const sctx = src.getContext("2d");
+  sctx.drawImage(img, 0, 0, W, H);
+  let base;
+  try {
+    base = sctx.getImageData(0, 0, W, H); // throws on file:// (tainted canvas)
+  } catch (err) {
+    // file:// pages: canvas pixel reads are blocked by the browser's origin
+    // rules. Keep the beautiful static image instead of the animation.
+    if (hud) hud.textContent = "static exposure — open over http(s) to watch the photograph develop";
+    return;
+  }
 
   const view = document.createElement("canvas");
   view.width = W; view.height = H;
-  view.className = img.className;
-  view.style.borderRadius = getComputedStyle(img).borderRadius;
+  view.style.cssText = "width:100%;height:auto;display:block;border-radius:14px;border:1px solid #23232f;";
   img.replaceWith(view);
   const ctx = view.getContext("2d");
   const out = ctx.createImageData(W, H);

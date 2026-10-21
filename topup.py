@@ -69,7 +69,7 @@ def topup(name: str, crop_px: int, extra: list[int]):
     print(f"[{name}] top-up done", flush=True)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     name = sys.argv[1]
     crop_px = int(sys.argv[2])
     extra = [int(v) for v in sys.argv[3:6]]

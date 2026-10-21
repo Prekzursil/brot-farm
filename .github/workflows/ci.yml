@@ -20,7 +20,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - run: pip install -r requirements.txt
-      - run: python -m pytest -v
+      - name: Test with coverage gate (100% required)
+        run: python -m pytest --cov -v
       - name: CLI smoke
         run: |
           python buddhabrot.py render --smoke

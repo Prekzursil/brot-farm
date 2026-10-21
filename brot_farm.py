@@ -252,6 +252,7 @@ def render_fractal(f, force=False):
 
 def write_outputs(f, hists, args=None):
     from PIL import Image
+    os.makedirs(OUT, exist_ok=True)
     plo = args.plo if args else 30.0
     pct = args.pct if args else 99.9
     gamma = args.gamma if args else 1.35
@@ -279,8 +280,8 @@ def make_poster(rgb_u8, path, title, sub):
     canvas = Image.new("RGB", (Wc, Hc), (8, 8, 11))
     canvas.paste(img, (m, m))
     d = ImageDraw.Draw(canvas)
-    ft = load_font(int(min(w, h) * 0.042))
-    fs = load_font(int(min(w, h) * 0.020))
+    ft = load_font(max(1, int(min(w, h) * 0.042)))
+    fs = load_font(max(1, int(min(w, h) * 0.020)))
     y_line = m + h + int(block * 0.38)
     d.line([(int(Wc * 0.32), y_line), (int(Wc * 0.68), y_line)], fill=(70, 70, 84), width=1)
     d.text(((Wc - d.textlength(title, font=ft)) / 2, y_line + int(block * 0.14)),
@@ -350,5 +351,5 @@ def main():
             print(f"{f['name']:<9} {W}x{H:<7} {lum.mean():5.3f} {100*(lum>0.05).mean():3.0f} {sym:5.2f} {comx:5.2f} {comy:5.2f}")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

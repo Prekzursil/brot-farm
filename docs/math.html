@@ -185,6 +185,7 @@ The theorem holds; the film is grainy.</p>
   Brot Farm · MIT · <a href="playground.html">next: the playground →</a>
 </footer>
 
+<script src="assets/hist-blue.js"></script>
 <script>
 "use strict";
 // ---- shared map registry (kept in sync with brot_farm.py) ----
@@ -280,53 +281,70 @@ const MAPS = {
   draw(true);
 })();
 
-// ---- tone lab ----
+// ---- tone lab (runs from raw histogram data — works on file:// too) ----
 (function () {
   const cv = document.getElementById("tl-canvas");
   if (!cv) return;
-  const img = new Image();
-  img.onload = () => {
-    const ctx = cv.getContext("2d");
-    const W = cv.width, H = cv.height;
-    const src = document.createElement("canvas");
-    src.width = W; src.height = H;
-    src.getContext("2d").drawImage(img, 0, 0, W, H);
-    const base = src.getContext("2d").getImageData(0, 0, W, H);
-    // histogram of encoded values, for percentile anchors
-    const counts = new Array(256).fill(0);
-    for (let i = 0; i < base.data.length; i += 4) counts[base.data[i]]++;
-    const lo = document.getElementById("tl-lo"), hi = document.getElementById("tl-hi"), g = document.getElementById("tl-g");
-    const hud = document.getElementById("tl-hud");
-    function pct(p) { // percentile over LIT pixels (encoded value > 2)
-      const total = counts.reduce((a, v, i) => a + (i > 2 ? v : 0), 0);
-      let acc = 0, target = total * p / 100;
-      for (let v = 3; v < 256; v++) { acc += counts[v]; if (acc >= target) return v / 255; }
-      return 1;
+  const hud = document.getElementById("tl-hud");
+  if (!window.BROT_HIST_B64) { hud.textContent = "histogram data failed to load"; return; }
+  const bin = atob(window.BROT_HIST_B64);
+  const N = 256;
+  const counts = new Uint16Array(N * N);
+  for (let i = 0; i < counts.length; i++) {
+    counts[i] = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
+  }
+  const ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  const logv = new Float32Array(N * N);
+  for (let i = 0; i < counts.length; i++) logv[i] = Math.log(1 + counts[i]);
+  // histogram of log values over LIT pixels -> percentile anchors
+  const LMAX = Math.log(1 + 65535);
+  const buckets = new Float64Array(2048);
+  let lit = 0;
+  for (let i = 0; i < logv.length; i++) {
+    if (counts[i] > 0) { buckets[Math.min(2047, (logv[i] / LMAX * 2048) | 0)]++; lit++; }
+  }
+  function pct(p) {
+    let acc = 0;
+    const target = lit * p / 100;
+    for (let b = 0; b < 2048; b++) {
+      acc += buckets[b];
+      if (acc >= target) return (b + 1) / 2048 * LMAX;
     }
-    function render() {
-      const vlo = pct(+lo.value), vhi = pct(+hi.value), gamma = +g.value;
-      const out = ctx.createImageData(W, H);
-      const d = out.data, b = base.data;
-      let mean = 0;
-      for (let i = 0; i < b.length; i += 4) {
-        let v = (b[i] / 255 - vlo) / Math.max(vhi - vlo, 1e-6);
+    return LMAX;
+  }
+  const lo = document.getElementById("tl-lo"), hi = document.getElementById("tl-hi"), g = document.getElementById("tl-g");
+  function render() {
+    const vlo = pct(+lo.value), vhi = pct(+hi.value), gamma = +g.value;
+    const out = ctx.createImageData(W, H);
+    const d = out.data;
+    let mean = 0;
+    // nearest-neighbor upscale 256 -> canvas
+    for (let py = 0; py < H; py++) {
+      const sy = (py / H * N) | 0;
+      for (let px = 0; px < W; px++) {
+        const i = (((px / W * N) | 0)) + sy * N;
+        let v = (logv[i] - vlo) / Math.max(vhi - vlo, 1e-6);
         v = Math.min(1, Math.max(0, v)) ** gamma;
         mean += v;
-        const c8 = v * 255;
-        d[i] = Math.min(255, c8 * 1.15); d[i+1] = Math.min(255, c8 * 1.05); d[i+2] = c8 * 0.90; d[i+3] = 255;
+        const o = (py * W + px) * 4;
+        d[o] = Math.min(255, v * 255 * 1.15);
+        d[o + 1] = Math.min(255, v * 255 * 1.05);
+        d[o + 2] = v * 255 * 0.90;
+        d[o + 3] = 255;
       }
-      ctx.putImageData(out, 0, 0);
-      document.getElementById("tl-lo-v").textContent = lo.value;
-      document.getElementById("tl-hi-v").textContent = hi.value;
-      document.getElementById("tl-g-v").textContent = gamma.toFixed(2);
-      hud.innerHTML = `anchors: log-v ${vlo.toFixed(3)} → ${vhi.toFixed(3)} · mean luminance ${(mean / (b.length / 4)).toFixed(3)}` +
-        (mean / (b.length / 4) > 0.4 ? " · ☂ overexposed fog" : (mean / (b.length / 4) < 0.03 ? " · 🌑 crushed blacks" : " · ✅ balanced"));
     }
-    [lo, hi, g].forEach((el) => el.addEventListener("input", render));
-    document.getElementById("tl-reset").addEventListener("click", () => { lo.value = 30; hi.value = 99.9; g.value = 1.35; render(); });
-    render();
-  };
-  img.src = "assets/hist-blue.png";
+    ctx.putImageData(out, 0, 0);
+    document.getElementById("tl-lo-v").textContent = lo.value;
+    document.getElementById("tl-hi-v").textContent = hi.value;
+    document.getElementById("tl-g-v").textContent = gamma.toFixed(2);
+    const m = mean / (W * H);
+    hud.innerHTML = `anchors: log-v ${vlo.toFixed(3)} → ${vhi.toFixed(3)} · mean luminance ${m.toFixed(3)}` +
+      (m > 0.4 ? " · ☂ overexposed fog" : (m < 0.03 ? " · 🌑 crushed blacks" : " · ✅ balanced"));
+  }
+  [lo, hi, g].forEach((el) => el.addEventListener("input", render));
+  document.getElementById("tl-reset").addEventListener("click", () => { lo.value = 30; hi.value = 99.9; g.value = 1.35; render(); });
+  render();
 })();
 </script>
 </body>

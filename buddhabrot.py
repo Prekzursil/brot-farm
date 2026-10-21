@@ -185,8 +185,8 @@ def make_poster(rgb_u8: np.ndarray, path: str, total_orbits: int) -> None:
     canvas = Image.new("RGB", (Wc, Hc), (8, 8, 11))
     canvas.paste(img, (m, m))
     d = ImageDraw.Draw(canvas)
-    f_title = load_font(int(s * 0.050))
-    f_sub = load_font(int(s * 0.021))
+    f_title = load_font(max(1, int(s * 0.050)))
+    f_sub = load_font(max(1, int(s * 0.021)))
     title = "B U D D H A B R O T"
     orbits_txt = f"{total_orbits:,}".replace(",", "\u2009")
     sub = f"z \u21a6 z\u00b2 + c    \u00b7    {orbits_txt} escaping orbits"
@@ -203,6 +203,7 @@ def make_poster(rgb_u8: np.ndarray, path: str, total_orbits: int) -> None:
 
 def save_outputs(hists: dict, tag: str, args) -> str:
     from PIL import Image
+    os.makedirs(OUT, exist_ok=True)
     gains = {"red": args.gr, "green": args.gg, "blue": args.gb}
     rgb = build_rgb(hists, args.plo, args.pct, args.gamma, gains, args.sat)
     u8 = (rgb * 255.0 + 0.5).astype(np.uint8)
@@ -237,5 +238,5 @@ def main() -> None:
     print("wrote", path, flush=True)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

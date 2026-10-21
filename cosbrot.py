@@ -142,8 +142,8 @@ def make_poster(rgb_u8, path, total_orbits):
     canvas = Image.new("RGB", (Wc, Hc), (8, 8, 11))
     canvas.paste(img, (m, m))
     d = ImageDraw.Draw(canvas)
-    f_title = load_font(int(s * 0.050))
-    f_sub = load_font(int(s * 0.021))
+    f_title = load_font(max(1, int(s * 0.050)))
+    f_sub = load_font(max(1, int(s * 0.021)))
     title = "C O S B R O T"
     orbits_txt = f"{total_orbits:,}".replace(",", "\u2009")
     sub = f"x\u2032 = cos x\u00b2 \u2212 y    \u00b7    y\u2032 = 2xy    \u00b7    {orbits_txt} escaping orbits"
@@ -176,6 +176,7 @@ def main():
         print(f"[{name}] cap={max_iter} samples={samples:,}", flush=True)
         hists[name] = render_channel(name, max_iter, samples, seed, cfg["size"], tag)
 
+    os.makedirs(OUT, exist_ok=True)
     gains = {"red": args.gr, "green": args.gg, "blue": args.gb}
     rgb = build_rgb(hists, args.plo, args.pct, args.gamma, gains, args.sat)
     u8 = (rgb * 255.0 + 0.5).astype(np.uint8)
@@ -187,5 +188,5 @@ def main():
     print("wrote", main_path, flush=True)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
