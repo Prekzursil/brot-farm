@@ -1,11 +1,11 @@
-# Brot Farm 🌀
+# Fractal Darkroom 🌀
 
-[![CI](https://github.com/Prekzursil/brot-farm/actions/workflows/ci.yml/badge.svg)](https://github.com/Prekzursil/brot-farm/actions/workflows/ci.yml)
-[![Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://prekzursil.github.io/brot-farm/)
+[![CI](https://github.com/Prekzursil/fractal-darkroom/actions/workflows/ci.yml/badge.svg)](https://github.com/Prekzursil/fractal-darkroom/actions/workflows/ci.yml)
+[![Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://prekzursil.github.io/fractal-darkroom/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/Prekzursil/brot-farm/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/Prekzursil/fractal-darkroom/actions/workflows/ci.yml)
 
-**Long-exposure photographs of mathematical escape.** A Buddhabrot family renderer:
+**Long-exposure photographs of mathematical escape — developed in a darkroom made of counting.** A Buddhabrot family renderer:
 instead of asking *"does this point escape?"*, it asks *"where does it travel on the way out?"*
 — and plots millions of escaping orbits as a density image. Plus 17 sibling fractals grown
 from the same idea: Antibuddhabrot, Nebulabrot, power mandalas (z³/z⁴/z⁵), Burning Ship,
@@ -19,11 +19,11 @@ no painting, just `z ↦ z² + c` iterated a few hundred million times.*
 
 ## Try it in the browser
 
-The [**Playground**](https://prekzursil.github.io/brot-farm/playground.html) runs live in
+The [**Playground**](https://prekzursil.github.io/fractal-darkroom/playground.html) runs live in
 your browser (no install, no server): animate single orbits Alan-Becker-style, watch a
 Buddhabrot develop like a photograph in real time, zoom a Mandelbrot explorer, and write
-your own iteration formulas in a sandbox. The [Math guide](https://prekzursil.github.io/brot-farm/math.html)
-and [Code walkthrough](https://prekzursil.github.io/brot-farm/code.html) explain everything
+your own iteration formulas in a sandbox. The [Math guide](https://prekzursil.github.io/fractal-darkroom/math.html)
+and [Code walkthrough](https://prekzursil.github.io/fractal-darkroom/code.html) explain everything
 in depth, with interactive diagrams.
 
 ## Quickstart (Python)
@@ -80,7 +80,7 @@ Two-phase vectorized Monte Carlo, pure numpy, no dependencies beyond numpy/Pillo
 
 Full reasoning — why two phases, why `bincount` over `np.add.at`, why float64, why
 percentile tone anchors, benchmarks, and the alternatives not taken — lives in the
-[Code walkthrough](https://prekzursil.github.io/brot-farm/code.html).
+[Code walkthrough](https://prekzursil.github.io/fractal-darkroom/code.html).
 
 ## Tests & CI
 
