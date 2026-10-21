@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html data-build="8d68b666" lang="en">
+<head>
+<script>
+/* error banner: works even if every other asset fails; shown only on error */
+(function(){function show(m){var b=document.getElementById('fd-error-banner');if(!b){b=document.createElement('div');b.id='fd-error-banner';b.style.cssText='position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#3a1418;color:#ffd9d9;border:1px solid #a33;padding:10px 12px;font:12px/1.5 monospace;border-radius:8px;display:flex;gap:10px;align-items:center';b.innerHTML='<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button type="button" style="all:unset;cursor:pointer;color:#ffb3b3;text-decoration:underline">copy report</button>';var add=function(){document.body.appendChild(b);b.querySelector('button').onclick=function(){var r='url='+location.href+' build='+(document.documentElement.dataset.build||'?')+' ua='+navigator.userAgent+'String.fromCharCode(10)'+(b.dataset.log||'');navigator.clipboard&&navigator.clipboard.writeText(r);};};document.body?add():document.addEventListener('DOMContentLoaded',add);}b.dataset.log=((b.dataset.log?b.dataset.log+'String.fromCharCode(10)':'')+m).slice(-2000);b.querySelector('span').textContent='Fractal Darkroom error: '+(m+'').slice(0,160);}window.addEventListener('error',function(e){show((e.message||'script error')+' @'+((e.filename||'').split('/').pop()||'')+':'+e.lineno)});window.addEventListener('unhandledrejection',function(e){show('unhandled rejection: '+((e.reason&&e.reason.message)||e.reason))})})();
+</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contribute — Fractal Darkroom</title>
+<meta name="description" content="Three ways to contribute: submit an APRS record from the playground, add a new fractal map through the build suite, or (operators only) change the quality platform.">
+<link rel="stylesheet" href="assets/style.css?v=a8070491">
+<style>
+  .shot { margin: 18px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .shot img { width: 100%; display: block; }
+  .shot figcaption { padding: 10px 14px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); }
+  .shot figcaption b { color: var(--text); }
+  .steps { list-style: none; padding-left: 0; counter-reset: step; }
+  .steps > li { counter-increment: step; position: relative; padding: 0 0 10px 52px; margin: 0 0 14px; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 1px; width: 34px; height: 34px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); color: var(--accent); font: 600 15px/32px var(--mono); text-align: center; }
+  .pathcard { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin: 22px 0; }
+</style>
+</head>
+<body>
+<nav class="top">
+  <div class="brand">FRACTAL<span>·</span>DARKROOM</div>
+  <a href="index.html">Gallery</a>
+  <a href="math.html">Math</a>
+  <a href="code.html">Code</a>
+  <a href="playground.html">Playground</a>
+  <a href="collection.html">Collection</a>
+  <a href="contribute.html" aria-current="page">Contribute</a>
+  <div class="spacer"></div>
+  <a class="github" href="https://github.com/Prekzursil/fractal-darkroom">GitHub ↗</a>
+</nav>
+
+<main>
+<div class="kicker reveal">Chapter ∞+1 — your turn</div>
+<h1 class="reveal">Contribute</h1>
+<p class="reveal">Three ways in, ordered by effort. Found a bug instead? The
+<a href="https://github.com/Prekzursil/fractal-darkroom/issues/new?template=bug_report.yml">bug report form</a>
+asks for the build hash and <em>copy report</em> text from the red error banner —
+that is all we need. Everything below is also written down in
+<a href="https://github.com/Prekzursil/fractal-darkroom/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
+
+<div class="pathcard reveal">
+  <div class="card"><h3>1 · Submit a picture</h3>
+    <p>No code. Find a variant in the playground, export it as an
+    <b>APRS</b> record, drop it on the issue form — the intake bot validates and
+    a human curates. <em>Minutes.</em></p></div>
+  <div class="card"><h3>2 · Add a fractal map</h3>
+    <p>The build suite scaffolds, scouts, previews and checks a new map against
+    the full quality bar: 100&nbsp;% line+branch tests, docs card, catalogue
+    parity. <em>A focused evening.</em></p></div>
+  <div class="card"><h3>3 · Platform changes</h3>
+    <p>CI lanes and tool pins live in the
+    <a href="https://github.com/Prekzursil/quality-zero-platform">quality-zero-platform</a>
+    repo — operator-only, PR + drift report required. <em>Not for casual PRs.</em></p></div>
+</div>
+
+<h2 class="reveal" id="aprs">Path 1 — submit an APRS record</h2>
+<p class="reveal"><b>APRS</b> = <em>Attractor Parameter Record Set</em> — one experiment as a
+portable <code>.aprs.json</code> file
+(<a href="https://github.com/Prekzursil/fractal-darkroom/blob/main/docs/adr/0001-aprs.md">ADR 0001</a> ·
+<a href="https://github.com/Prekzursil/fractal-darkroom/blob/main/docs/aprs.schema.json">schema</a>).
+Accepted records land in the <a href="collection.html">community collection</a>.
+Every screenshot below is a real capture of the exact step.</p>
+
+<ol class="steps">
+  <li class="reveal"><b>Find a variant in the playground.</b> Open the
+    <a href="playground.html">playground</a> and scroll to the <em>Experiments</em>
+    panel. <b>🎲 Surprise me</b> composes a random valid grammar from the seed
+    (same seed → same map), <b>🧬 Mutate this</b> perturbs one operator of the
+    current map, and the suggestion strip scores seeded candidates — click any
+    thumbnail to apply it. Tune caps, window and tone gamma until the preview
+    is worth keeping.
+    <figure class="shot"><img src="assets/contribute-shot-variant.jpg?v=f3538f37" alt="Playground experiments panel after Surprise me with seed 12345: theater map exp_s12345 registered, active experiment s12345 (power:sin/abs p5), three suggestion thumbnails, export APRS button" loading="lazy">
+    <figcaption><b>Live capture</b> — the experiments panel after
+    <b>Surprise me</b> with seed 12345: the found variant registers in the map
+    list as <code>exp_s12345</code>, the active experiment becomes
+    <code>s12345</code> (power:sin/abs p5), and three scored suggestions
+    appear.</figcaption></figure></li>
+
+  <li class="reveal"><b>Export it.</b> Click <b>📦 export APRS</b>. The browser
+    downloads <code>&lt;name&gt;.aprs.json</code> — validated in-browser against
+    the same field set as the Python validator before it is ever written.
+    <figure class="shot"><img src="assets/contribute-shot-export.jpg?v=725f95fc" alt="Experiments panel HUD confirming: APRS s12345 exported, preview 8f0a8f6e, validated against the schema v1 field set" loading="lazy">
+    <figcaption><b>Live capture</b> — the panel right after the export: the HUD
+    confirms the record name (<code>s12345</code>), its preview hash
+    (<code>8f0a8f6e</code>), and that it passed the schema
+    v1 field check.</figcaption></figure>
+    <figure class="shot"><img src="assets/contribute-shot-json.jpg?v=dc7332f1" alt="The downloaded s12345.aprs.json file rendered as JSON, showing schema, grammar, window, caps, gamma, notes, author, created, renderer, provenance and preview fields" loading="lazy">
+    <figcaption><b>The actual downloaded file</b> — grammar, window, caps, tone
+    gamma and a content-hash preview. This exact file is what the next two
+    steps consume.</figcaption></figure></li>
+
+  <li class="reveal"><b>Validate locally</b> — the same check the intake bot runs:
+<pre><code>python scripts/validate_aprs.py s12345.aprs.json</code></pre>
+    <figure class="shot"><img src="assets/contribute-shot-validator.jpg?v=ad84cfbb" alt="Terminal output of the validator: python scripts/validate_aprs.py out/s12345.aprs.json — OK out\s12345.aprs.json (schema v1), exit code 0" loading="lazy">
+    <figcaption><b>Captured command output</b> — exit 0 means the record is
+    structurally valid. A rejection prints one specific reason per line; fix
+    the listed fields and re-export.</figcaption></figure>
+    Prefer the terminal end-to-end? Author the same record from a build-suite
+    map: <code>python brot_build.py aprs my_map --out my_map.aprs.json</code>.</li>
+
+  <li class="reveal"><b>Open the APRS issue form</b> at
+    <a href="https://github.com/Prekzursil/fractal-darkroom/issues/new?template=aprs.yml">github.com/Prekzursil/fractal-darkroom/issues/new?template=aprs.yml</a>.
+    <b>Drag &amp; drop the <code>.aprs.json</code> file into the attachment field</b> —
+    the uploaded <code>…aprs.json</code> link in the issue body is what the bot
+    downloads; pasted JSON without an attachment cannot be picked up. Add one
+    line on why the map is worth keeping.
+    <figure class="shot"><img src="assets/contribute-shot-issueform.jpg?v=f1b98b4e" alt="The APRS submission issue form rendered from the repository template: attachment field, one-line rationale, provenance attestation" loading="lazy">
+    <figcaption><b>Rendered from the repository's own issue template</b>
+    (<code>.github/ISSUE_TEMPLATE/aprs.yml</code>) — GitHub asks you to sign in
+    before showing the live form, so this is a faithful rendering of the actual
+    fields: the file attachment (required), the one-line rationale (required),
+    and the provenance attestation (required).</figcaption></figure></li>
+
+  <li class="reveal"><b>The bot validates.</b> The
+    <a href="https://github.com/Prekzursil/fractal-darkroom/blob/main/.github/workflows/aprs-intake.yml">APRS intake workflow</a>
+    downloads your attachment, re-runs <code>scripts/validate_aprs.py</code>,
+    rejects records without a preview hash, dedupes by preview hash against
+    <code>collection/</code>, and comments pass/fail <em>with reasons</em> on
+    your issue — usually within minutes.</li>
+
+  <li class="reveal"><b>A human merges.</b> On pass, the bot opens a curation PR
+    adding <code>collection/&lt;preview-hash&gt;.aprs.json</code> plus the regenerated
+    index. <b>Nothing merges automatically</b> — every entry is curated by hand.
+    Curious what is already in? Browse the
+    <a href="collection.html">collection page</a>; load any record back into the
+    playground with <b>load APRS…</b> to see it render.</li>
+</ol>
+
+<h2 class="reveal" id="map">Path 2 — add a new fractal map</h2>
+<p class="reveal">New maps enter through the build suite and must clear the
+full quality bar — <code>check</code> (below), CI's 100&nbsp;% line<b>+</b>branch
+coverage, the docs card, and the Python↔JavaScript catalogue parity gate. The
+<code>demo_*</code> maps in <a href="https://github.com/Prekzursil/fractal-darkroom/tree/main/usermaps">usermaps/</a>
+are the reference examples.</p>
+<pre class="reveal"><code># 1. scaffold a map from the operator grammar
+#    real op f: cos sin tan sinh exp abs   imag op g: plain cos abs neg absxy
+#    power 2..5 · families: mutation | fold | power
+python brot_build.py new my_map --family mutation --real tan --imag plain
+
+# 2. scout the sampling window (aim for an escape fraction in 0.15–0.9)
+python brot_build.py scout my_map
+
+# 3. fast deterministic preview + docs card thumb (docs/maps/my_map.jpg),
+#    and regenerate the catalogue
+python brot_build.py preview my_map
+
+# 4. the full quality bar — must print: check: OK
+python brot_build.py check my_map
+
+# 5. full-quality render (user maps join the farm list automatically)
+python brot_farm.py render my_map</code></pre>
+<ul class="reveal">
+  <li><b>Parity gate:</b> every <code>usermaps/*.py</code> entry must appear in
+  <code>docs/assets/catalogue.js</code>; regenerate it with
+  <code>python brot_build.py catalogue</code> — never hand-edit it.</li>
+  <li><b>Tests:</b> every new Python line is covered at 100&nbsp;% line <em>and</em>
+  branch by tests added in the same change
+  (<code>python -m pytest --cov</code>; <code># pragma: no cover</code> only on
+  <code>__main__</code> guards).</li>
+  <li><b>Before pushing:</b> <code>bash scripts/preflight.sh</code> — all lanes,
+  locally, before CI sees them.</li>
+</ul>
+
+<h2 class="reveal" id="platform">Path 3 — quality-platform changes (operator-only)</h2>
+<p class="reveal">The CI quality lanes are not defined here:
+<code>.github/workflows/quality.yml</code> calls a pinned reusable workflow from
+the <a href="https://github.com/Prekzursil/quality-zero-platform">quality-zero-platform</a>
+(QZP) control plane, and even the biome version pin is read from QZP at runtime.
+Changes are <b>operator-only</b> and happen <b>in the QZP repo</b>, via PR with
+the <em>Control Plane Verify</em> and <em>CodeQL</em> checks required, and every
+profile/workflow PR must include a <b>drift report</b> — see
+<a href="https://github.com/Prekzursil/quality-zero-platform/blob/main/docs/audit/QZP-DRIFT-REPORT.md">QZP-DRIFT-REPORT.md</a>
+for the exact command and format. If a platform change makes this repo red, the
+fix belongs in QZP — <b>never weaken a gate locally to go green</b>.</p>
+
+<h2 class="reveal">One rule above all</h2>
+<p class="reveal">Every gate must pass for the right reason. The
+<a href="https://github.com/Prekzursil/fractal-darkroom/blob/main/.github/PULL_REQUEST_TEMPLATE.md">pull-request template</a>
+is a 1:1 map of the CI gates — preflight lanes, 100&nbsp;% line+branch coverage,
+the site suite, asset versioning, and the parity test — and reviewers re-run
+everything. Conduct: the
+<a href="https://github.com/Prekzursil/fractal-darkroom/blob/main/CODE_OF_CONDUCT.md">Contributor Covenant 2.1</a>
+applies; security findings go to
+<a href="https://github.com/Prekzursil/fractal-darkroom/security/advisories/new">private vulnerability reporting</a>,
+never a public issue.</p>
+</main>
+
+<footer>
+  Fractal Darkroom · MIT · rendered with numpy, documented with plain HTML ·
+  <a href="https://github.com/Prekzursil/fractal-darkroom">source</a>
+</footer>
+<script src="assets/app.js?v=81e01ed8"></script>
+</body>
+</html>

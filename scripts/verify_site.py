@@ -31,7 +31,14 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))  # scripts.validate_aprs import when run directly
 
 DOCS = REPO / "docs"
-PAGES = ["index.html", "math.html", "code.html", "playground.html", "collection.html"]
+PAGES = [
+    "index.html",
+    "math.html",
+    "code.html",
+    "playground.html",
+    "collection.html",
+    "contribute.html",
+]
 CANVAS_LUM = """(cid) => {
     const c = document.getElementById(cid);
     if (!c) return null;
@@ -323,6 +330,27 @@ def check_page(pg, base: str, page_name: str, mobile: bool) -> None:
             "APRS loaded" in aprs_hud and gamma_back2 == "1.85",
             f"hud={aprs_hud[:60]!r} gamma={gamma_back2}",
         )
+    if page_name == "contribute.html":
+        # walkthrough page: every screenshot must load (scroll first — they
+        # are lazy), and the nav wiring must expose Contribute
+        pg.evaluate("() => window.scrollTo(0, document.body.scrollHeight)")
+        pg.wait_for_timeout(900)
+        shots = pg.evaluate(
+            "() => [...document.querySelectorAll('.shot img')]"
+            ".filter(i => !i.complete || i.naturalWidth === 0).length"
+        )
+        n_shots = pg.evaluate("() => document.querySelectorAll('.shot img').length")
+        record(
+            lane,
+            "contribute-shots",
+            shots == 0 and n_shots >= 4,
+            f"{shots} broken of {n_shots}",
+        )
+        nav = pg.evaluate(
+            "() => [...document.querySelectorAll('nav a')]"
+            ".some(a => a.textContent === 'Contribute')"
+        )
+        record(lane, "contribute-nav", bool(nav))
     record(lane, "console-clean", not errors, "; ".join(errors[:3])[:180])
 
 

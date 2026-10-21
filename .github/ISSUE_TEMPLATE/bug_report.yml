@@ -1,0 +1,77 @@
+name: Bug report
+description: Something broke — a renderer crash, a wrong image, or a red error banner on the site
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! Two things make fractal-darkroom bugs fixable fast:
+
+        - **The error-banner report.** When a site page fails, a red
+          *Fractal Darkroom error* banner appears at the bottom-left. Click its
+          **copy report** button — the clipboard text starts with
+          `url=… build=<hash> ua=…` and carries the last log lines. Paste it
+          below; the `build` hash identifies the exact deployed asset set.
+        - **A seed / parameter set** for anything numerical — the renders are
+          deterministic, so an exact reproduction is gold.
+
+        Security-sensitive findings must NOT go here: use
+        [private vulnerability reporting](https://github.com/Prekzursil/fractal-darkroom/security/advisories/new)
+        instead (see [SECURITY.md](https://github.com/Prekzursil/fractal-darkroom/blob/main/SECURITY.md)).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, plus what you expected instead.
+      placeholder: The developing-room render froze at 0 samples and the page showed a red banner…
+    validations:
+      required: true
+  - type: textarea
+    id: copy-report
+    attributes:
+      label: Error-banner copy report
+      description: |
+        Site bugs only: click **copy report** on the red banner (bottom-left of
+        the page) and paste the clipboard text here — it starts with
+        `url=… build=… ua=…`. Skip this field for pure Python/CLI bugs.
+      placeholder: "url=https://prekzursil.github.io/fractal-darkroom/playground.html build=0439746c ua=Mozilla/5.0 …"
+    validations:
+      required: false
+  - type: input
+    id: build-hash
+    attributes:
+      label: Build hash from the banner / page source
+      description: |
+        The 8-character hash after `build=` in the copy report (also visible as
+        `<html data-build="…">` when you view the page source).
+      placeholder: "0439746c"
+    validations:
+      required: false
+  - type: input
+    id: page
+    attributes:
+      label: Page or command
+      description: Site page URL, or the exact CLI command that failed.
+      placeholder: playground.html — or: python brot_build.py preview my_map
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps; for renderer/numerics bugs include the seed and parameters (map, caps, window, gamma, samples).
+      placeholder: |
+        1. Open playground.html
+        2. Set seed 12345, click "Surprise me"
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser + OS for site bugs; `python --version` + OS for CLI bugs.
+      placeholder: "Chrome 149 / Windows 11 — or Python 3.12.7 / Ubuntu 24.04"
+    validations:
+      required: false

@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         **APRS** = Attractor Parameter Record Set — the portable experiment record
-        ([ADR 0001](https://prekzursil.github.io/fractal-darkroom/adr/0001-aprs.html) ·
+        ([ADR 0001](https://github.com/Prekzursil/fractal-darkroom/blob/main/docs/adr/0001-aprs.md) ·
         [schema](https://github.com/Prekzursil/fractal-darkroom/blob/main/docs/aprs.schema.json)).
 
         Author one in the [playground](https://prekzursil.github.io/fractal-darkroom/playground.html)
