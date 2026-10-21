@@ -16,15 +16,22 @@ DOCS = Path(__file__).resolve().parent.parent / "docs"
 REF = re.compile(r'((?:src|href)=")(assets/[^"?]+)(?:\?v=[0-9a-f]+)?(")')
 
 
+def _normalized(path: Path) -> bytes:
+    """LF-normalized content: git working trees differ by core.autocrlf
+    (Windows checkouts are CRLF, CI/Linux are LF); version stamps must be a
+    property of the content, not of the local line-ending config."""
+    return path.read_bytes().replace(b"\r\n", b"\n")
+
+
 def asset_hash(path: Path) -> str:
-    return hashlib.sha1(path.read_bytes()).hexdigest()[:8]
+    return hashlib.sha1(_normalized(path)).hexdigest()[:8]
 
 
 def version_docs() -> int:
     changed = 0
     assets = {p.name: p for p in (DOCS / "assets").iterdir() if p.is_file()}
     build = hashlib.sha1(
-        b"".join(sorted(p.read_bytes() for p in assets.values()))
+        b"".join(sorted(_normalized(p) for p in assets.values()))
     ).hexdigest()[:8]
     for html in DOCS.glob("*.html"):
         src = html.read_text(encoding="utf-8")

@@ -530,3 +530,15 @@ def test_version_assets_stamps_only_one_build_attr(tmp_path, monkeypatch):
     va.version_docs()
     html = (tmp_path / "docs" / "a.html").read_text(encoding="utf-8")
     assert html.count("data-build=") == 1 and "old" not in html
+
+
+def test_version_assets_hash_is_line_ending_independent(tmp_path, monkeypatch):
+    import scripts.version_assets as va
+
+    docs = tmp_path / "docs" / "assets"
+    docs.mkdir(parents=True)
+    lf = docs / "a.js"
+    lf.write_bytes(b"console.log(1)\n")
+    h_lf = va.asset_hash(lf)
+    lf.write_bytes(b"console.log(1)\r\n")  # CRLF working tree (autocrlf clone)
+    assert va.asset_hash(lf) == h_lf, "hash must not depend on checkout line endings"
