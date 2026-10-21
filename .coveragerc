@@ -10,6 +10,7 @@ source =
     scripts.version_assets
     scripts.validate_aprs
     scripts.build_collection
+    scripts.paper_figures
     brot_build
     brot_samplers
 branch = True
