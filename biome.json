@@ -13,7 +13,9 @@
       "!**/build/**",
       "!**/out/**",
       "!**/.venv/**",
-      "!**/vendor/**"
+      "!**/vendor/**",
+      "!docs/assets/catalogue.js",
+      "!docs/assets/hist-blue.js"
     ]
   },
   "formatter": {
