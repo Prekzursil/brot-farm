@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The mathematics — Brot Farm</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">BROT<span>·</span>FARM</div>
+  <a href="index.html">Gallery</a>
+  <a href="math.html" aria-current="page">Math</a>
+  <a href="code.html">Code</a>
+  <a href="playground.html">Playground</a>
+  <div class="spacer"></div>
+  <a class="github" href="https://github.com/Prekzursil/brot-farm">GitHub ↗</a>
+</nav>
+
+<main>
+<div class="kicker reveal">Chapter 1</div>
+<h1 class="reveal">The mathematics of escape</h1>
+<p class="reveal">Everything below is one sentence, stretched out: <b>iterate a rule, watch where
+the points go, count the visits.</b> But each clause hides something worth slowing down for.</p>
+
+<h2 class="reveal">1 · One step of the machine: squaring a complex number</h2>
+<p class="reveal">Write <b>z = x + iy</b> in polar form as <b>r·e^{iθ}</b> — a radius r and an angle θ.
+Squaring acts beautifully: <b>z² has radius r² and angle 2θ</b>. In Cartesian components
+(that’s what the code computes):</p>
+<pre class="reveal"><code>z² = (x + iy)² = (x² − y²) + i·(2xy)</code></pre>
+<p class="reveal">So one iteration <b>z ↦ z² + c</b> doubles the point’s angle around the origin,
+squares its distance, then nudges it by the fixed constant c. Doubling angles is where all the
+chaos lives: angles near each other separate twice as fast each step — after k steps, a gap of ε
+has grown to ε·2^k. That exponential sensitivity is the fingerprint of a chaotic map, and the
+reason orbits trace filigree instead of blobs.</p>
+
+<svg class="reveal" viewBox="0 0 760 250" style="width:100%;max-width:760px;display:block;margin:18px auto" role="img" aria-label="Diagram: squaring a complex number doubles its angle and squares its radius">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9b98a3"/></marker>
+  </defs>
+  <g font-family="Cascadia Code, Consolas, monospace" font-size="13">
+    <circle cx="200" cy="125" r="95" fill="none" stroke="#23232f"/>
+    <circle cx="200" cy="125" r="47" fill="none" stroke="#23232f" stroke-dasharray="4 4"/>
+    <line x1="30" y1="125" x2="370" y2="125" stroke="#23232f"/>
+    <line x1="200" y1="230" x2="200" y2="20" stroke="#23232f"/>
+    <line x1="200" y1="125" x2="278" y2="66" stroke="#e8a04c" stroke-width="2"/>
+    <circle cx="278" cy="66" r="5" fill="#e8a04c"/>
+    <text x="288" y="58" fill="#e8a04c">z = r·e^{iθ}</text>
+    <path d="M 233 100 A 45 45 0 0 1 258 96" fill="none" stroke="#6fc3df" marker-end="url(#arr)"/>
+    <text x="238" y="92" fill="#6fc3df">θ</text>
+
+    <text x="395" y="120" fill="#e8e6e1" font-size="20">⟼  square it  ⟼</text>
+
+    <circle cx="620" cy="125" r="95" fill="none" stroke="#23232f"/>
+    <line x1="450" y1="125" x2="760" y2="125" stroke="#23232f"/>
+    <line x1="620" y1="230" x2="620" y2="20" stroke="#23232f"/>
+    <line x1="620" y1="125" x2="679" y2="82" stroke="#d96a6a" stroke-width="2"/>
+    <circle cx="679" cy="82" r="5" fill="#d96a6a"/>
+    <text x="560" y="70" fill="#d96a6a">z² : angle 2θ, radius r²</text>
+    <path d="M 653 100 A 42 42 0 0 1 686 96" fill="none" stroke="#6fc3df" marker-end="url(#arr)"/>
+    <text x="648" y="92" fill="#6fc3df">2θ</text>
+    <text x="556" y="215" fill="#9b98a3">r=1 stays on the circle · r&lt;1 falls inward · r&gt;1 flees</text>
+  </g>
+</svg>
+
+<h2 class="reveal">2 · Prisoners and escapees</h2>
+<p class="reveal">Fix a constant <b>c</b> and iterate from <b>z₀ = 0</b>. Two futures exist.
+If the orbit ever crosses <b>|z| &gt; 2</b>, it diverges to infinity, and provably so: past radius 2
+the squaring outruns the additive nudge (for |z| ≥ max(|c|, 2), each step at least squares the
+excess). Those are the <b>escapees</b> — the raw material of every image here. Points whose orbits
+stay bounded forever are <b>prisoners</b>; the set of all c-values with prisoner orbits <em>is</em>
+the Mandelbrot set. The Antibuddhabrot, perversely, photographs the prisoners instead.</p>
+<p class="reveal"><b>Try it:</b> click anywhere below to choose c and watch its orbit. Land inside
+the cardioid for a locked-in prisoner; graze the boundary for long dramatic escapes; step outside
+for a quick death.</p>
+
+<div class="panel reveal">
+  <div class="controls">
+    <label>map
+      <select id="orbit-map">
+        <option value="mandel">z² + c</option>
+        <option value="cubic">z³ + c</option>
+        <option value="ship">(|x|+i|y|)² + c</option>
+        <option value="tricorn">z̄² + c</option>
+        <option value="cosfull">x′ = cos(x²−y²) + c, y′ = 2xy</option>
+        <option value="cosy">x′ = x² − y² + c, y′ = cos 2xy</option>
+      </select>
+    </label>
+    <label>c = <span id="orbit-c" class="mono">−0.100 + 0.650i</span></label>
+    <label style="flex-direction:row;align-items:center;gap:8px">
+      <input type="checkbox" id="orbit-trail" checked> keep previous trails
+    </label>
+  </div>
+  <canvas id="orbit-demo" class="viz" width="760" height="480"></canvas>
+  <div class="hud" id="orbit-hud">click to choose c</div>
+</div>
+
+<h2 class="reveal">3 · The photograph: orbit density as a measure</h2>
+<p class="reveal">A single orbit is a polyline; a million of them make a <b>cloud</b>. Formally,
+each escaping orbit contributes counting measure along its path; the Buddhabrot is the expected
+density of that cloud over uniformly sampled c — estimated by Monte Carlo. The estimator’s
+noise obeys the photography law: per-pixel standard deviation ∝ √visits, so relative grain
+falls as <b>1/√N</b>. The classic 74M-sample render averages ~1000 visits per lit pixel;
+the sparse power brots started near ~20 and were topped up until structure stood out of the grain.</p>
+<p class="reveal">Visits are also brutally heavy-tailed: the bulb’s rim collects millions while
+the far field counts dozens. A linear display would show one white dot. Hence the darkroom work
+in §6.</p>
+
+<h2 class="reveal">4 · Three channels = three depths of time</h2>
+<p class="reveal">Iteration count is the hidden third dimension. An orbit that escapes in 30 steps
+never wanders far from the set; one that survives 1500 steps before breaking out skims the
+boundary for a long, long time. Rendering the same scene at three caps — 80, 400, 1500 — and
+assigning them to <b>B, G, R</b> turns depth-of-time into color: shallow fast escapes glow
+blue-cyan, mid-depth green-gold, and the deep survivors burn orange-red as halos. The
+<b>Nebulabrot</b> pushes the same idea to 50 / 500 / 5000 for a purely gaseous look.</p>
+
+<h2 class="reveal">5 · Escape laws are per-map theorems</h2>
+<p class="reveal">“Past radius 2 you die” is true for quadratics but is <em>not</em> a universal
+law. Each update rule needs its own escape criterion, and getting it wrong quietly poisons the
+classifier (see <a href="code.html#the-bug">the NaN bug</a>). The rules used in this project:</p>
+<table class="reveal">
+  <tr><th>Family</th><th>Rule</th><th>Escape test</th><th>Why it’s valid</th></tr>
+  <tr><td>z<sup>n</sup> + c</td><td class="mono">x′=Re(zⁿ)+cx</td><td class="mono">|z| &gt; 2</td>
+      <td>polynomial growth dominates the additive c once |z| exceeds max(2, |c|)</td></tr>
+  <tr><td>sin z + c, cos z + c</td><td class="mono">cosh/sinh split</td><td class="mono">|z| &gt; 10³</td>
+      <td>cosh y ~ e^|y|/2: once |y| ≳ 8 growth is exponential per step</td></tr>
+  <tr><td>cos-mutations</td><td class="mono">x′ = cos(x²) − y + cx</td><td class="mono">|y| &gt; 100</td>
+      <td>cos folds huge |x| back to [−1,1] in ONE step — x is a trapdoor, <b>y is the only exit</b>; once |y| is large, x′ ≈ −y and |y′| = |2xy| compounds</td></tr>
+  <tr><td>y-cosine mutation</td><td class="mono">y′ = cos 2xy + cy</td><td class="mono">|x| &gt; 100</td>
+      <td>the mirror image: y′ is forever bounded in [−1, 1], so x — whose update still squares — is the only exit</td></tr>
+</table>
+
+<h2 class="reveal">6 · The darkroom: log compression between anchors</h2>
+<p class="reveal">Raw counts span five orders of magnitude. The tone pipeline is:</p>
+<pre class="reveal"><code>v   = log(1 + h)                       # compress five decades into ~11 stops
+lo  = percentile(v[lit], 30)          # black anchor: the 30th pct of LIT pixels
+hi  = percentile(v[lit], 99.9)        # white anchor: the hot core
+img = clip((v − lo) / (hi − lo)) ** γ # gamma shapes the midtones</code></pre>
+<p class="reveal">Why percentiles and not min/max? One over-hot pixel (the bulb rim gets
+millions of visits) would pin the white point and starve everything else; anchors taken from
+the distribution of <em>lit</em> pixels self-calibrate to whatever the map produced. A black
+anchor matters just as much: the project’s first attempt normalized only the top and rendered
+fog — 59% mean luminance — until the 30th-percentile floor put the darkness back.</p>
+<p class="reveal"><b>Tone Lab:</b> the canvas below starts from a real histogram channel
+(the classic render’s blue layer, log-encoded to 8-bit). You are holding the same knobs the
+renderer exposes.</p>
+
+<div class="panel reveal" id="tone-lab">
+  <div class="controls">
+    <label>black point (percentile of lit px) <span id="tl-lo-v" class="mono"></span>
+      <input type="range" id="tl-lo" min="0" max="70" value="30" step="1"></label>
+    <label>white point <span id="tl-hi-v" class="mono"></span>
+      <input type="range" id="tl-hi" min="90" max="100" value="99.9" step="0.1"></label>
+    <label>gamma <span id="tl-g-v" class="mono"></span>
+      <input type="range" id="tl-g" min="0.4" max="2.5" value="1.35" step="0.05"></label>
+    <button class="btn" id="tl-reset">reset</button>
+  </div>
+  <canvas id="tl-canvas" class="viz" width="760" height="760"></canvas>
+  <div class="hud" id="tl-hud"></div>
+</div>
+
+<h2 class="reveal">7 · Symmetry is a theorem you can measure</h2>
+<p class="reveal">If a map’s coefficients are real, it commutes with conjugation:
+<b>F(z̄; c̄) = conj(F(z; c))</b>. Mirror the start, and every step mirrors — so a uniformly
+sampled symmetric window must produce a mirror-symmetric histogram, up to noise. Break the
+law on purpose — fold |2xy| (Burning Ship, Buffalo), conjugate before squaring (Tricorn —
+which instead gains 3-fold rotation), or add a lone −y (our mutations) — and the figure
+tips over. The renderer’s QC measures exactly this:</p>
+<table class="reveal">
+  <tr><th>Map</th><th>Mirror correlation</th><th>Verdict</th></tr>
+  <tr><td>cosfull — cos(x²−y²)</td><td class="mono">1.00</td><td>perfectly equivariant (±y enter squared)</td></tr>
+  <tr><td>Buddhabrot / Antibuddhabrot</td><td class="mono">0.95</td><td>equivariant ✓</td></tr>
+  <tr><td>Tricorn</td><td class="mono">0.95</td><td>equivariant via double conjugation</td></tr>
+  <tr><td>cos-mutation (−y)</td><td class="mono">0.74</td><td>law broken → lopsided Buddha</td></tr>
+  <tr><td>Burning Ship</td><td class="mono">0.45</td><td>|2xy| fold identifies the two halves</td></tr>
+  <tr><td>Buffalo</td><td class="mono">0.32</td><td>double fold</td></tr>
+  <tr><td>Julia-brot (c not real)</td><td class="mono">0.61</td><td>c breaks equivariance</td></tr>
+</table>
+<p class="reveal">The power maps z³/z⁴/z⁵ are equivariant too — their measured correlations dip
+(0.5–0.76) purely because their histograms are sparse, and shot noise decorrelates faint halves.
+The theorem holds; the film is grainy.</p>
+</main>
+
+<footer>
+  Brot Farm · MIT · <a href="playground.html">next: the playground →</a>
+</footer>
+
+<script>
+"use strict";
+// ---- shared map registry (kept in sync with brot_farm.py) ----
+const MAPS = {
+  mandel:  { win: [-2.25, 1.15, -1.7, 1.7], step: (x,y,cx,cy)=>[x*x-y*y+cx, 2*x*y+cy], gone: (x,y)=>x*x+y*y>4 },
+  cubic:   { win: [-1.6, 1.6, -1.6, 1.6], step: (x,y,cx,cy)=>[x**3-3*x*y*y+cx, 3*x*x*y-y**3+cy], gone: (x,y)=>x*x+y*y>4 },
+  ship:    { win: [-2.2, 1.2, -1.8, 1.8], step: (x,y,cx,cy)=>[x*x-y*y+cx, Math.abs(2*x*y)+cy], gone: (x,y)=>x*x+y*y>4 },
+  tricorn: { win: [-2.1, 2.1, -1.8, 1.8], step: (x,y,cx,cy)=>[x*x-y*y+cx, -2*x*y+cy], gone: (x,y)=>x*x+y*y>4 },
+  cosfull: { win: [-2.5, 2.5, -3, 3], step: (x,y,cx,cy)=>[Math.cos(x*x-y*y)+cx, 2*x*y+cy], gone: (x,y)=>Math.abs(y)>100 },
+  cosy:    { win: [-2.5, 2.5, -2.5, 2.5], step: (x,y,cx,cy)=>[x*x-y*y+cx, Math.cos(2*x*y)+cy], gone: (x,y)=>Math.abs(x)>100 },
+};
+
+// ---- orbit demo ----
+(function () {
+  const cv = document.getElementById("orbit-demo");
+  if (!cv) return;
+  const ctx = cv.getContext("2d");
+  const mapSel = document.getElementById("orbit-map");
+  const hud = document.getElementById("orbit-hud");
+  const cLab = document.getElementById("orbit-c");
+  const keepBox = document.getElementById("orbit-trail");
+  let c = [-0.1, 0.65];
+  let persistent = document.createElement("canvas");
+  persistent.width = cv.width; persistent.height = cv.height;
+
+  function toPx(map, x, y) {
+    const [x0, x1, y0, y1] = map.win;
+    return [ (x - x0) / (x1 - x0) * cv.width, (y1 - y) / (y1 - y0) * cv.height ];
+  }
+  function toWorld(map, px, py) {
+    const [x0, x1, y0, y1] = map.win;
+    return [ x0 + px / cv.width * (x1 - x0), y1 - py / cv.height * (y1 - y0) ];
+  }
+  function draw(reset) {
+    const map = MAPS[mapSel.value];
+    if (reset || !keepBox.checked) { persistent.getContext("2d").clearRect(0,0,persistent.width,persistent.height); }
+    ctx.fillStyle = "#04040a"; ctx.fillRect(0, 0, cv.width, cv.height);
+    // faint prisoner-set hint: shade by escape depth, coarse
+    const step = 10;
+    for (let py = 0; py < cv.height; py += step) {
+      for (let px = 0; px < cv.width; px += step) {
+        const [cx_, cy_] = toWorld(map, px + step/2, py + step/2);
+        let x = cx_, y = cy_, n = 0;
+        for (; n < 60; n++) {
+          [x, y] = map.step(x, y, cx_, cy_);
+          if (!isFinite(x) || !isFinite(y) || map.gone(x, y)) break;
+        }
+        if (n >= 60) { ctx.fillStyle = "rgba(111,195,223,0.10)"; ctx.fillRect(px, py, step, step); }
+        else if (n > 18) { ctx.fillStyle = `rgba(232,160,76,${0.02 + n/60*0.10})`; ctx.fillRect(px, py, step, step); }
+      }
+    }
+    // orbit
+    const [cx_, cy_] = c;
+    let x = cx_, y = cy_, n = 0;
+    ctx.drawImage(persistent, 0, 0);
+    const pctx = persistent.getContext("2d");
+    ctx.lineWidth = 1.6; ctx.strokeStyle = "#e8a04c"; ctx.globalAlpha = 0.9;
+    pctx.lineWidth = 1.2; pctx.strokeStyle = "rgba(232,160,76,0.30)";
+    let prev = toPx(map, x, y);
+    pctx.beginPath(); pctx.moveTo(prev[0], prev[1]);
+    let escaped = false;
+    for (; n < 500; n++) {
+      [x, y] = map.step(x, y, cx_, cy_);
+      const p = toPx(map, x, y);
+      if (!escaped) {
+        ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+      }
+      pctx.lineTo(p[0], p[1]);
+      prev = p;
+      if (!isFinite(x) || !isFinite(y) || map.gone(x, y)) { escaped = true; break; }
+    }
+    pctx.stroke();
+    ctx.globalAlpha = 1;
+    // c marker + start
+    const cp = toPx(map, cx_, cy_);
+    ctx.fillStyle = "#6fc3df"; ctx.beginPath(); ctx.arc(cp[0], cp[1], 4, 0, 7); ctx.fill();
+    ctx.font = "12px Cascadia Code, Consolas, monospace";
+    ctx.fillStyle = "#6fc3df"; ctx.fillText("c", cp[0] + 7, cp[1] - 6);
+    hud.innerHTML = escaped
+      ? `<b>escaped</b> after ${n + 1} iterations · |z| left the plot region`
+      : (n >= 500 ? `<b>still trapped</b> at ${n} iterations — a prisoner (for now)` : "…");
+    cLab.textContent = `${cx_.toFixed(3)} ${cy_ < 0 ? "−" : "+"} ${Math.abs(cy_).toFixed(3)}i`;
+  }
+  cv.addEventListener("click", (e) => {
+    const r = cv.getBoundingClientRect();
+    const map = MAPS[mapSel.value];
+    const w = toWorld(map, (e.clientX - r.left) / r.width * cv.width, (e.clientY - r.top) / r.height * cv.height);
+    c = [Math.max(map.win[0], Math.min(map.win[1], w[0])), Math.max(map.win[2], Math.min(map.win[3], w[1]))];
+    draw(false);
+  });
+  mapSel.addEventListener("change", () => draw(true));
+  keepBox.addEventListener("change", () => {});
+  draw(true);
+})();
+
+// ---- tone lab ----
+(function () {
+  const cv = document.getElementById("tl-canvas");
+  if (!cv) return;
+  const img = new Image();
+  img.onload = () => {
+    const ctx = cv.getContext("2d");
+    const W = cv.width, H = cv.height;
+    const src = document.createElement("canvas");
+    src.width = W; src.height = H;
+    src.getContext("2d").drawImage(img, 0, 0, W, H);
+    const base = src.getContext("2d").getImageData(0, 0, W, H);
+    // histogram of encoded values, for percentile anchors
+    const counts = new Array(256).fill(0);
+    for (let i = 0; i < base.data.length; i += 4) counts[base.data[i]]++;
+    const lo = document.getElementById("tl-lo"), hi = document.getElementById("tl-hi"), g = document.getElementById("tl-g");
+    const hud = document.getElementById("tl-hud");
+    function pct(p) { // percentile over LIT pixels (encoded value > 2)
+      const total = counts.reduce((a, v, i) => a + (i > 2 ? v : 0), 0);
+      let acc = 0, target = total * p / 100;
+      for (let v = 3; v < 256; v++) { acc += counts[v]; if (acc >= target) return v / 255; }
+      return 1;
+    }
+    function render() {
+      const vlo = pct(+lo.value), vhi = pct(+hi.value), gamma = +g.value;
+      const out = ctx.createImageData(W, H);
+      const d = out.data, b = base.data;
+      let mean = 0;
+      for (let i = 0; i < b.length; i += 4) {
+        let v = (b[i] / 255 - vlo) / Math.max(vhi - vlo, 1e-6);
+        v = Math.min(1, Math.max(0, v)) ** gamma;
+        mean += v;
+        const c8 = v * 255;
+        d[i] = Math.min(255, c8 * 1.15); d[i+1] = Math.min(255, c8 * 1.05); d[i+2] = c8 * 0.90; d[i+3] = 255;
+      }
+      ctx.putImageData(out, 0, 0);
+      document.getElementById("tl-lo-v").textContent = lo.value;
+      document.getElementById("tl-hi-v").textContent = hi.value;
+      document.getElementById("tl-g-v").textContent = gamma.toFixed(2);
+      hud.innerHTML = `anchors: log-v ${vlo.toFixed(3)} → ${vhi.toFixed(3)} · mean luminance ${(mean / (b.length / 4)).toFixed(3)}` +
+        (mean / (b.length / 4) > 0.4 ? " · ☂ overexposed fog" : (mean / (b.length / 4) < 0.03 ? " · 🌑 crushed blacks" : " · ✅ balanced"));
+    }
+    [lo, hi, g].forEach((el) => el.addEventListener("input", render));
+    document.getElementById("tl-reset").addEventListener("click", () => { lo.value = 30; hi.value = 99.9; g.value = 1.35; render(); });
+    render();
+  };
+  img.src = "assets/hist-blue.png";
+})();
+</script>
+</body>
+</html>

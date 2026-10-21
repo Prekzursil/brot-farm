@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playground — Brot Farm</title>
+<meta name="description" content="Interactive fractal laboratory: animate orbits, watch a Buddhabrot develop in real time, explore the Mandelbrot set, and write your own iteration formulas.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">BROT<span>·</span>FARM</div>
+  <a href="index.html">Gallery</a>
+  <a href="math.html">Math</a>
+  <a href="code.html">Code</a>
+  <a href="playground.html" aria-current="page">Playground</a>
+  <div class="spacer"></div>
+  <a class="github" href="https://github.com/Prekzursil/brot-farm">GitHub ↗</a>
+</nav>
+
+<main>
+<div class="kicker reveal">Chapter 0 — the fun one</div>
+<h1 class="reveal">The playground</h1>
+<p class="reveal">Everything the Python renderer does, distilled into your browser. Watch a single
+orbit walk (Alan-Becker style), let it rain orbits until a Buddha condenses out of the mist,
+zoom the Mandelbrot set, or <b>write your own formula</b> and see what its escapees look like.
+Nothing is pre-rendered here — every pixel is computed live, on your machine, right now.</p>
+
+<!-- ============================================================ ORBIT LAB -->
+<h2 class="reveal">1 · Orbit theater</h2>
+<p class="reveal">One starting point, one rule, frame by frame. The faint blue shading marks
+c-values whose orbits survive 60+ iterations (the map’s “prisoner country”); the orange thread
+is the orbit you’re growing. Pick c on the canvas, or drive it from the explorer below.</p>
+<div class="panel reveal">
+  <div class="controls">
+    <label>map <select id="ot-map"></select></label>
+    <label>x′ = <input type="text" id="ot-fx" value="x*x - y*y + cx" size="18" spellcheck="false"></label>
+    <label>y′ = <input type="text" id="ot-fy" value="2*x*y + cy" size="16" spellcheck="false"></label>
+    <button class="btn" id="ot-apply">apply formula</button>
+    <button class="btn" id="ot-play">⏸ pause</button>
+    <button class="btn" id="ot-step">step ▸</button>
+    <button class="btn" id="ot-reset">reset</button>
+    <label>speed <input type="range" id="ot-speed" min="1" max="30" value="6"></label>
+    <label>trail <input type="range" id="ot-trail" min="10" max="400" value="160"></label>
+  </div>
+  <div class="grid2">
+    <canvas id="ot-canvas" class="viz" width="640" height="560"></canvas>
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">Live readout</h3>
+        <div class="hud" id="ot-hud" style="font-size:14px;min-height:120px"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 6px">Rain of orbits</h3>
+        <p style="font-size:13.5px;color:var(--muted);margin:0 0 10px">Two thousand simultaneous
+        escaping orbits, glowing additively — a miniature Buddhabrot condensing in front of you.
+        Click to restart the rain somewhere new.</p>
+        <div class="controls" style="margin:0">
+          <button class="btn primary" id="ot-rain">☔ start rain</button>
+          <button class="btn" id="ot-rain-clear">clear film</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================== MINI BUDDHA -->
+<h2 class="reveal">2 · The developing room</h2>
+<p class="reveal">The actual Buddhabrot algorithm, at 360², accumulating forever. Each frame adds
+thousands of sampled orbits; the tone map re-anchors as exposure grows — exactly like the Python
+renderer’s percentile technique, live. Give it thirty seconds and the figure emerges.</p>
+<div class="panel reveal">
+  <div class="controls">
+    <label>map <select id="mb-map"></select></label>
+    <label>iteration cap <input type="range" id="mb-cap" min="10" max="400" value="120" step="10"><span class="mono" id="mb-cap-v"></span></label>
+    <label>samples/frame <input type="range" id="mb-rate" min="200" max="8000" value="3000" step="200"><span class="mono" id="mb-rate-v"></span></label>
+    <label>tone gamma <input type="range" id="mb-gamma" min="0.4" max="2.2" value="1.0" step="0.05"></label>
+    <button class="btn" id="mb-play">⏸ pause</button>
+    <button class="btn" id="mb-reset">new film</button>
+    <button class="btn" id="mb-save">save PNG</button>
+  </div>
+  <div class="grid2">
+    <canvas id="mb-canvas" class="viz" width="360" height="360" style="max-width:420px;margin:0 auto;image-rendering:pixelated"></canvas>
+    <div>
+      <div class="hud" id="mb-hud" style="font-size:14px;min-height:90px"></div>
+      <div class="card" style="margin-top:12px">
+        <h3 style="margin:0 0 6px">What you are watching</h3>
+        <p style="font-size:13.5px;color:var(--muted);margin:0">Phase 1 and phase 2 of the
+        renderer, fused: each sampled c is classified on the fly, and if it escapes, its whole
+        path is dropped into the exposure. The grain you see fading is the 1/√N law from the
+        <a href="math.html">math chapter</a>, visible in real time.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================= EXPLORER -->
+<h2 class="reveal">3 · The explorer</h2>
+<p class="reveal">Classic escape-time Mandelbrot with 4× supersampling. Scroll to zoom, drag to
+pan, double-click to reset — and click (without dragging) to send that c straight into the orbit
+theater above.</p>
+<div class="panel reveal">
+  <div class="panel" style="padding:0;overflow:hidden;border-radius:10px">
+    <canvas id="ex-canvas" class="viz" width="900" height="560" style="border:none;border-radius:0"></canvas>
+  </div>
+  <div class="hud" id="ex-hud">center −0.6 + 0i · scale 3.4 · zoom 1×</div>
+</div>
+
+<!-- ========================================================== SANDBOX IDEAS -->
+<h2 class="reveal">4 · Formulas worth typing</h2>
+<p class="reveal">The x′ / y′ boxes accept any JavaScript expression in <code>x</code>,
+<code>y</code>, <code>cx</code>, <code>cy</code> (Math functions available bare —
+<code>sin</code>, <code>cos</code>, <code>exp</code>, <code>abs</code>, <code>sqrt</code>…).
+A few with known-good results:</p>
+<table class="reveal">
+  <tr><th>Idea</th><th>x′</th><th>y′</th><th>What happens</th></tr>
+  <tr><td>The mutation from Act II</td><td class="mono">cos(x*x) - y + cx</td><td class="mono">2*x*y + cy</td><td>lopsided Buddha, y-driven escape</td></tr>
+  <tr><td>Burning Ship</td><td class="mono">x*x - y*y + cx</td><td class="mono">abs(2*x*y) + cy</td><td>the fold, in orbit space</td></tr>
+  <tr><td>Celtic</td><td class="mono">abs(x*x - y*y) + cx</td><td class="mono">2*x*y + cy</td><td>mirror-symmetric spine</td></tr>
+  <tr><td>Sine map</td><td class="mono">sin(x)*cosh(y) + cx</td><td class="mono">cos(x)*sinh(y) + cy</td><td>orbits confined to a band</td></tr>
+  <tr><td>Dip your toe in chaos</td><td class="mono">tan(x*x) - y + cx</td><td class="mono">2*x*y + cy</td><td>pole-hopping streaks</td></tr>
+  <tr><td>No prisoners at all</td><td class="mono">exp(x*x) - y + cx</td><td class="mono">2*x*y + cy</td><td>everything escapes in ~4 steps</td></tr>
+  <tr><td>Rotate the whole plane</td><td class="mono">0.8*(x*x - y*y) - 0.6*2*x*y + cx</td><td class="mono">0.6*(x*x - y*y) + 0.8*2*x*y + cy</td><td>the Buddha, spun by 37°</td></tr>
+</table>
+</main>
+
+<footer>
+  Brot Farm · MIT · all computation in your browser · <a href="index.html">back to the gallery →</a>
+</footer>
+<script src="assets/playground.js"></script>
+</body>
+</html>

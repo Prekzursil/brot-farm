@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brot Farm — long-exposure photographs of mathematical escape</title>
+<meta name="description" content="A Buddhabrot family renderer: 17 orbit-density fractals, interactive math playground, and a complete code walkthrough.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">BROT<span>·</span>FARM</div>
+  <a href="index.html" aria-current="page">Gallery</a>
+  <a href="math.html">Math</a>
+  <a href="code.html">Code</a>
+  <a href="playground.html">Playground</a>
+  <div class="spacer"></div>
+  <a class="github" href="https://github.com/Prekzursil/brot-farm">GitHub ↗</a>
+</nav>
+
+<main>
+<section class="hero reveal">
+  <div>
+    <div class="kicker">Orbit-density fractals</div>
+    <h1>Long-exposure photographs of<br>mathematical escape</h1>
+    <p class="tagline">The Mandelbrot set asks <em>“does this point escape?”</em>.
+    The Buddhabrot asks <em>“where does it travel on the way out?”</em> — and keeps the answer.</p>
+    <p>Every image here is a histogram of where millions of escaping orbits actually went.
+    No raytracing, no painting: one line of iteration
+    <span class="formula">z ↦ z² + c</span>, a few hundred million samples, and a camera made of counting.</p>
+    <div class="cta-row">
+      <a class="cta" href="playground.html">▶ Open the Playground</a>
+      <a class="cta ghost" href="math.html">Read the math</a>
+      <a class="cta ghost" href="code.html">How it’s built</a>
+    </div>
+    <div class="badges">
+      <span class="badge hot">17 maps</span>
+      <span class="badge">74M+ samples per render</span>
+      <span class="badge">pure numpy CPU</span>
+      <span class="badge">MIT</span>
+    </div>
+  </div>
+  <div>
+    <img id="develop-photo" src="assets/hero-buddha.jpg" alt="The Buddhabrot: density of orbit points of samples escaping the Mandelbrot set, a symmetric glowing figure">
+    <div class="hud" id="develop-hud" style="text-align:center"></div>
+  </div>
+</section>
+
+<h2 class="reveal">The collection</h2>
+<p class="reveal">Seventeen maps, one renderer. Each keeps the same skeleton — sample, iterate, classify,
+replay, histogram, tone-map — and swaps the beating heart: the update rule.
+Click any card to open it live in the playground.</p>
+
+<div class="gallery" id="gallery">
+  <figure class="reveal"><a href="playground.html?map=anti"><img src="assets/t-anti.jpg" alt="Antibuddhabrot" loading="lazy"></a>
+    <figcaption><b>Antibuddhabrot</b><span class="f">orbits that never escape — the negative</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=nebula"><img src="assets/t-nebula.jpg" alt="Nebulabrot" loading="lazy"></a>
+    <figcaption><b>Nebulabrot</b><span class="f">iteration caps 50 / 500 / 5000</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=julia"><img src="assets/t-julia.jpg" alt="Julia-brot" loading="lazy"></a>
+    <figcaption><b>Julia-brot</b><span class="f">fixed c = −0.7 + 0.27i, z-space</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=z3"><img src="assets/t-z3.jpg" alt="Cubic brot" loading="lazy"></a>
+    <figcaption><b>Cubic</b><span class="f">z ↦ z³ + c — 2-fold mandala</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=z4"><img src="assets/t-z4.jpg" alt="Quartic brot" loading="lazy"></a>
+    <figcaption><b>Quartic</b><span class="f">z ↦ z⁴ + c — 3-fold mandala</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=z5"><img src="assets/t-z5.jpg" alt="Quintic brot" loading="lazy"></a>
+    <figcaption><b>Quintic</b><span class="f">z ↦ z⁵ + c — 4-fold mandala</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=ship"><img src="assets/t-ship.jpg" alt="Burning Ship brot" loading="lazy"></a>
+    <figcaption><b>Burning Ship</b><span class="f">(|x| + i|y|)² + c — the fold breaks symmetry</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=tricorn"><img src="assets/t-tricorn.jpg" alt="Tricorn brot" loading="lazy"></a>
+    <figcaption><b>Tricorn</b><span class="f">z̄² + c — conjugation squared</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=celtic"><img src="assets/t-celtic.jpg" alt="Celtic brot" loading="lazy"></a>
+    <figcaption><b>Celtic</b><span class="f">|x² − y²| + 2ixy + c</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=buffalo"><img src="assets/t-buffalo.jpg" alt="Buffalo brot" loading="lazy"></a>
+    <figcaption><b>Buffalo</b><span class="f">|x² − y²| + i|2xy| — double fold</span></figcaption></figure>
+  <figure class="wide reveal"><a href="playground.html?map=sinz"><img src="assets/t-sinz.jpg" alt="Sin brot" loading="lazy"></a>
+    <figcaption><b>Sinbrot</b><span class="f">z ↦ sin z + c — prisoners live in a band</span></figcaption></figure>
+  <figure class="wide reveal"><a href="playground.html?map=cosz"><img src="assets/t-cosz.jpg" alt="Cos brot" loading="lazy"></a>
+    <figcaption><b>Cosbrot</b><span class="f">z ↦ cos z + c</span></figcaption></figure>
+  <figure class="tall reveal"><a href="playground.html?map=cosfull"><img src="assets/t-cosfull.jpg" alt="Cosfull mutation" loading="lazy"></a>
+    <figcaption><b>Cosfull mutation</b><span class="f">x′ = cos(x² − y²), y′ = 2xy — tall wanderer</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=cosy"><img src="assets/t-cosy.jpg" alt="Y-cosine mutation" loading="lazy"></a>
+    <figcaption><b>Y-cosine mutation</b><span class="f">x′ = x² − y², y′ = cos 2xy</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=tanmut"><img src="assets/t-tanmut.jpg" alt="Tan mutation" loading="lazy"></a>
+    <figcaption><b>Tan mutation</b><span class="f">x′ = tan x² − y, y′ = 2xy</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=sinhmut"><img src="assets/t-sinhmut.jpg" alt="Sinh mutation" loading="lazy"></a>
+    <figcaption><b>Sinh mutation</b><span class="f">x′ = sinh x² − y, y′ = 2xy</span></figcaption></figure>
+  <figure class="reveal"><a href="playground.html?map=expmut"><img src="assets/t-expmut.jpg" alt="Exp mutation" loading="lazy"></a>
+    <figcaption><b>Exp mutation</b><span class="f">x′ = exp x² − y — no prisoners at all</span></figcaption></figure>
+</div>
+
+<h2 class="reveal">How this project grew</h2>
+<p class="reveal">One session, five acts — recorded here because the <em>process</em> turned out to be
+as interesting as the pictures.</p>
+<ul class="timeline reveal">
+  <li><span class="t">ACT I — the classic</span><br>
+    A two-phase numpy renderer: <b>classify</b> who escapes, then <b>replay</b> only the escapees and
+    histogram every point they visit. 74 million samples, three iteration caps (80 / 400 / 1500)
+    for R/G/B. <b>3 min 05 s</b> on a laptop CPU. The tone curve needed a real black-point anchor —
+    log-compression alone turned the first attempt into fog.</li>
+  <li><span class="t">ACT II — the first mutation</span><br>
+    <b>x′ = cos(x²) − y, y′ = 2xy.</b> Scouting revealed two laws: large |x| folds back through the
+    cosine within one step (so <b>y is the true exit direction</b> — escape is judged on |y|), and the
+    lone −y term <b>breaks mirror symmetry</b>: a lopsided Buddha (0.74 vs 0.95 correlation).
+    ~17% of starts never escape.</li>
+  <li><span class="t">ACT III — the farm</span><br>
+    One generalized renderer, seventeen update rules, four parallel shards. Canvases follow the
+    maps: sin/cos brots are <b>banners</b> (prisoners confined to a horizontal band), the cosfull
+    mutation is a <b>1:3 tower</b> (91% of orbit points inside |y|&lt;3, journeys to |y|=100).</li>
+  <li><span class="t">ACT IV — the bug</span><br>
+    Sparse renders triggered an investigation. The test suite caught it: a diverged orbit can
+    <b>overflow to NaN</b> before the chunked escape-check fires, and NaN comparisons are False —
+    so the point masquerades as a prisoner <em>forever</em>. Two-thirds of the escaping orbits in the
+    quadratic family had been silently dropped. One guard
+    (<code>(r &gt; 4) | ~isfinite(r)</code>) and 200M corrective samples later, the family is whole.
+    <a href="code.html#the-bug">Full story →</a></li>
+  <li><span class="t">ACT V — the museum</span><br>
+    Numeric QC (symmetry correlation, center-of-mass, region brightness, coverage), a test suite
+    of 24 assertions, CI on three Python versions, and this site: a playground where the maths
+    runs in your browser.</li>
+</ul>
+
+<h2 class="reveal">The philosophy of the Buddhabrot</h2>
+<div class="grid2 reveal">
+  <div class="card">
+    <h3>It is a photograph</h3>
+    <p>A long exposure. Each sample <b>c</b> is a photon; its orbit is the streak it draws on the film;
+    the histogram is the film itself, counting hits. The Antibuddhabrot is the <b>negative</b> —
+    the photons that never leave the room. The Nebulabrot is a longer exposure still: iteration
+    caps of 5000 separate the travelers who merely linger from those who are truly lost.</p>
+  </div>
+  <div class="card">
+    <h3>It requires prophecy</h3>
+    <p>You cannot draw an escaping orbit while it runs — you don’t yet know it will escape.
+    The picture only exists <b>after</b> classification, which is why the renderer works in two
+    phases: first judge every point by its entire future, then re-run only the ones whose story
+    is worth telling. The image is a memory of futures.</p>
+  </div>
+  <div class="card">
+    <h3>Symmetry is law</h3>
+    <p>Maps with real coefficients obey <b>conjugation equivariance</b>: mirror the input, mirror the
+    output — so the Buddha stands symmetric. Fold an absolute value into the rule (Burning Ship,
+    Buffalo) or a lone −y (our mutations) and the figure <b>tips over</b>, because the law is broken
+    on purpose. Every render is QC-checked against the symmetry its formula predicts.</p>
+  </div>
+  <div class="card">
+    <h3>Noise is the medium</h3>
+    <p>The image is a Monte-Carlo estimate; its grain obeys shot noise, fading as 1/√N. The tone
+    curve — log compression between percentile anchors — is the darkroom technique that decides
+    which truths survive. Turn the knobs yourself in the
+    <a href="math.html#tone-lab">Tone Lab</a>.</p>
+  </div>
+</div>
+</main>
+
+<footer>
+  Brot Farm · MIT · rendered with numpy, documented with plain HTML ·
+  <a href="https://github.com/Prekzursil/brot-farm">source</a>
+</footer>
+<script src="assets/app.js"></script>
+</body>
+</html>
