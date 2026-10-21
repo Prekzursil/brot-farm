@@ -4,6 +4,7 @@ poster/tone outputs, caching paths, and the topup tool.
 """
 import importlib
 import os
+import shutil
 import sys
 
 import numpy as np
@@ -87,10 +88,24 @@ def test_build_rgb_sat_one_skips_vibrance():
     assert b.shape == (16, 16, 3)
 
 
-def test_load_font_falls_back_when_no_fonts(tmp_path, monkeypatch):
-    monkeypatch.setenv("WINDIR", str(tmp_path))
-    f = bb.load_font(14)
-    assert f is not None
+FONT_PROBES = [
+    os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "arial.ttf"),
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+    "/System/Library/Fonts/Helvetica.ttc",
+]
+
+
+def test_load_font_truetype_and_default_branches(tmp_path):
+    source = next((p for p in FONT_PROBES if os.path.exists(p)), None)
+    if source is None:
+        pytest.skip("no system font available to exercise the truetype branch")
+    fonts = tmp_path / "Fonts"
+    fonts.mkdir()
+    shutil.copy(source, fonts / "arial.ttf")
+    real = bb.load_font(14, fonts_dir=str(fonts))
+    fallback = bb.load_font(14, fonts_dir=str(tmp_path / "empty"))
+    assert real is not None and fallback is not None
 
 
 def test_make_poster_writes_file(tmp_path):

@@ -165,9 +165,11 @@ def build_rgb(hists: dict, plo: float, phi: float, gamma: float, gains: dict, sa
     return rgb
 
 
-def load_font(size: int):
+def load_font(size: int, fonts_dir=None):
+    """Best-effort UI font; fonts_dir injectable for tests and odd platforms."""
     from PIL import ImageFont
-    fonts_dir = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts")
+    if fonts_dir is None:
+        fonts_dir = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts")
     for name in ("segoeuil.ttf", "segoeui.ttf", "arial.ttf"):
         path = os.path.join(fonts_dir, name)
         if os.path.exists(path):
