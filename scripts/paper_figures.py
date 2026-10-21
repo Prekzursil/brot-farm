@@ -392,9 +392,7 @@ def fig1_convergence(cells: dict[tuple[str, int], Cell]) -> Figure:
         Line2D([], [], color="0.55", linewidth=0.9, label="MC rate N$^{-1/2}$")
     )
     fig.legend(handles=handles, loc="outside upper center", ncol=4, fontsize=8)
-    fig.text(
-        0.01,
-        0.005,
+    axes[2][1].set_xlabel(
         "Slopes are receipted fits (cell_*.json). S1's 62.5k rung is degenerate "
         "(pre-pass consumes the budget) and is excluded.",
         fontsize=6.5,
@@ -423,17 +421,18 @@ def fig2_equal_budget(
     panels = (
         (crop(s0), f"S0 @ N={budget:,}\nmean ROI rel. err {top_err['S0']:.3f}"),
         (crop(s2), f"S2 @ N={budget:,}\nmean ROI rel. err {top_err['S2']:.3f}"),
-        (r_c, f"reference @ N={cell.ref_budget:,} (10× top rung)"),
+        (r_c, f"reference @ N={cell.ref_budget / 1e6:.0f}M (10× top rung)"),
     )
     for ax, (img, title) in zip(axes[0], panels, strict=True):
         _im(ax, img, lo, hi)
         ax.set_title(title, fontsize=8)
+    dens = lambda a: a / max(a.sum(), 1.0)  # noqa: E731
     for ax, img, lab in (
-        (axes[1, 0], rel_dev(crop(s0), r_c), "S0 − reference"),
-        (axes[1, 1], rel_dev(crop(s2), r_c), "S2 − reference"),
+        (axes[1, 0], rel_dev(dens(crop(s0)), dens(r_c)), "S0 − reference"),
+        (axes[1, 1], rel_dev(dens(crop(s2)), dens(r_c)), "S2 − reference"),
     ):
         _dev_im(ax, img)
-        ax.set_title(f"{lab}\n(signed rel. dev., clipped ±100%)", fontsize=8)
+        ax.set_title(f"{lab}\n(density rel. dev., clipped ±100%)", fontsize=8)
     axes[1, 2].axis("off")
     axes[1, 2].text(
         0.0,
@@ -480,9 +479,9 @@ def fig4_gallery(gallery: Gallery, images: dict[str, np.ndarray]) -> Figure:
     gs = fig.add_gridspec(3, 5, height_ratios=[1, 1, 1.15], hspace=0.28, wspace=0.06)
     fams = ("power", "fold", "mutation")
     fam_title = {
-        "power": "power:  z → zⁿ + c",
-        "fold": "fold:  x′ = (|·|)Re zⁿ,  y′ = g(2xy)",
-        "mutation": "mutation:  x′ = f(x²) − y,  y′ = g(2xy)",
+        "power": "power family\nz → zⁿ + c",
+        "fold": "fold family\n(|·|)Re zⁿ, g(2xy)",
+        "mutation": "mutation family\nf(x²) − y, g(2xy)",
     }
     for r, fam in enumerate(fams):
         row = [m for m in gallery.maps if m.family == fam]
@@ -542,98 +541,113 @@ def fig5_grammar(grammar: Grammar, gallery: Gallery) -> Figure:
     left.set_ylim(0, 10)
     left.axis("off")
     fams = ("power", "fold", "mutation")
-    y = 9.2
+    top = 9.6
     for fam in fams:
         info = grammar.families[fam]
         left.add_patch(
             FancyBboxPatch(
-                (0.3, y - 2.4),
+                (0.3, top - 2.75),
                 9.2,
-                2.5,
+                2.75,
                 boxstyle="round,pad=0.12",
                 facecolor="0.96",
                 edgecolor="0.35",
             )
         )
-        left.text(0.7, y - 0.35, fam, fontsize=11, weight="bold", va="top")
-        left.text(0.7, y - 1.0, info["formula"], fontsize=9.5, va="top")
-        chips: list[str] = []
+        left.text(0.7, top - 0.4, fam, fontsize=11, weight="bold", va="top")
+        power_note = (
+            "   (n ∈ " + ",".join(str(p) for p in info["powers"]) + ")"
+            if info.get("powers")
+            else ""
+        )
+        left.text(0.7, top - 1.05, info["formula"] + power_note, fontsize=9, va="top")
+        line = top - 1.65
         if info.get("real_ops"):
-            chips.append("real: " + " ".join(info["real_ops"]))
+            left.text(
+                0.7,
+                line,
+                "real ops f:  " + ", ".join(info["real_ops"]),
+                fontsize=6.8,
+                va="top",
+            )
+            line -= 0.5
         if info.get("imag_ops"):
-            chips.append("imag: " + " ".join(info["imag_ops"]))
-        if info.get("powers"):
-            chips.append("n ∈ " + ",".join(str(p) for p in info["powers"]))
-        left.text(0.7, y - 1.62, "   ".join(chips), fontsize=7.2, va="top")
-        y -= 3.1
+            left.text(
+                0.7,
+                line,
+                "imag ops g:  " + ", ".join(info["imag_ops"]),
+                fontsize=6.8,
+                va="top",
+            )
+        top -= 3.1
     left.set_title("parameter-space grammar (brot_build.py)", fontsize=10)
 
     dirs = ("radial", "vertical", "horizontal")
     dlab = {
-        "radial": ("|z| bailout", "←→↑↓ all directions"),
-        "vertical": ("|y| bailout", "↑↓ vertical exit only"),
-        "horizontal": ("|x| bailout", "←→ horizontal exit only"),
+        "radial": ("|z| bailout", "all directions"),
+        "vertical": ("|y| bailout", "vertical exit only"),
+        "horizontal": ("|x| bailout", "horizontal exit only"),
     }
     right = fig.add_subplot(gs[1])
     right.set_xlim(-1.6, 1.6)
-    right.set_ylim(-1.35, 1.45)
+    right.set_ylim(-1.95, 1.5)
     right.axis("off")
     right.set_title("escape predicates → exit directions", fontsize=10)
-    yy = 1.25
+    yy = 1.35
     for d in dirs:
         preds = [p for p in grammar.predicates if p.direction == d]
         nm = ", ".join(p.name for p in preds)
         n_maps = sum(len(p.maps) for p in preds)
         right.add_patch(
             FancyBboxPatch(
-                (-1.55, yy - 1.06),
+                (-1.55, yy - 1.0),
                 3.1,
-                0.94,
+                1.0,
                 boxstyle="round,pad=0.08",
                 facecolor="0.96",
                 edgecolor="0.35",
             )
         )
-        right.text(-1.45, yy - 0.16, f"{dlab[d][0]} — {nm}", fontsize=8.5, va="top")
-        right.text(-1.45, yy - 0.5, f"{dlab[d][1]}", fontsize=7, va="top")
+        right.text(-1.45, yy - 0.2, f"{dlab[d][0]} — {nm}", fontsize=8.5, va="top")
+        right.text(-1.45, yy - 0.5, dlab[d][1], fontsize=7, va="top")
         right.text(
             -1.45,
-            yy - 0.8,
+            yy - 0.78,
             f"{n_maps} production maps",
             fontsize=7,
             va="top",
             color="0.35",
         )
-        cx, cy = 1.15, yy - 0.55
+        cx, cy = 1.18, yy - 0.5
         right.add_patch(
             Rectangle(
-                (cx - 0.28, cy - 0.28), 0.56, 0.56, facecolor="none", edgecolor="0.25"
+                (cx - 0.26, cy - 0.26), 0.52, 0.52, facecolor="none", edgecolor="0.25"
             )
         )
         arrows: list[tuple[float, float]] = (
             [
-                (0, 0.45),
-                (0, -0.45),
-                (0.45, 0),
-                (-0.45, 0),
-                (0.32, 0.32),
-                (-0.32, 0.32),
-                (0.32, -0.32),
-                (-0.32, -0.32),
+                (0, 0.42),
+                (0, -0.42),
+                (0.42, 0),
+                (-0.42, 0),
+                (0.3, 0.3),
+                (-0.3, 0.3),
+                (0.3, -0.3),
+                (-0.3, -0.3),
             ]
             if d == "radial"
-            else [(0, 0.45), (0, -0.45)]
+            else [(0, 0.42), (0, -0.42)]
             if d == "vertical"
-            else [(0.45, 0), (-0.45, 0)]
+            else [(0.42, 0), (-0.42, 0)]
         )
         for dx, dy in arrows:
             right.annotate(
                 "",
                 xy=(cx + dx, cy + dy),
-                xytext=(cx + 0.85 * dx, cy + 0.85 * dy),
+                xytext=(cx + 0.8 * dx, cy + 0.8 * dy),
                 arrowprops=dict(arrowstyle="-|>", color="#0072B2", linewidth=1.1),
             )
-        yy -= 1.02
+        yy -= 1.1
     fig.text(
         0.5,
         0.015,
@@ -659,8 +673,8 @@ def outline_text(
     slopes0 = [cells[(m, c)].slopes["S0"] for m in MAPS for c in CAPS]
     slopes2 = [cells[(m, c)].slopes["S2"] for m in MAPS for c in CAPS]
     mc = cells[("mandel", 1500)]
-    sym_pow = [m.sym for m in gallery.maps if m.family == "power"]
-    sym_mut = [m.sym for m in gallery.maps if m.family == "mutation"]
+    sym_eq = [m.sym for m in gallery.maps if m.equivariant]
+    sym_ne = [m.sym for m in gallery.maps if not m.equivariant]
     return f"""# OUTLINE — Whitesides figure plan (final order)
 
 Regenerate everything with one command:
@@ -669,8 +683,8 @@ Regenerate everything with one command:
 | # | file | claim (one sentence) |
 |---|------|----------------------|
 | 1 | fig5_grammar | A single parameter-space grammar — three families (power, fold, mutation) composed from six real operators, five imaginary operators and powers 2–5 — generates every map in the farm, and each map's escape predicate turns it into a radial, vertical or horizontal exit test. |
-| 2 | fig4_gallery | The grammar's {len(gallery.maps)} gallery maps realize distinct mirror-symmetry classes: measured top/bottom symmetry correlation ρ is high for the conjugation-equivariant power family ({min(sym_pow):.2f}–{max(sym_pow):.2f}) and low for the mutation family, which breaks the law by construction ({min(sym_mut):.2f}–{max(sym_mut):.2f}). |
-| 3 | fig3_nanbug | One missing NaN guard in the chunked escape predicate silently deletes {100 * nb.dropped_fraction:.1f}% of quadratic-family escapers while the render still looks plausible — correctness of the classifier is not visually detectable. |
+| 2 | fig4_gallery | Measured mirror-symmetry correlation separates the {len(gallery.maps)} gallery maps exactly as the conjugation-equivariance law predicts: all {len(sym_eq)} equivariant step rules measure ρ = {min(sym_eq):.2f}–{max(sym_eq):.2f} while all {len(sym_ne)} law-breakers (even-in-y fold operators, and every −y mutation) sit lower at ρ = {min(sym_ne):.2f}–{max(sym_ne):.2f}. |
+| 3 | fig3_nanbug | One missing NaN guard in the chunked escape predicate silently deletes {100 * nb.dropped_fraction:.1f}% of quadratic-family escapers (measured at cap 1500, chunk 32; same seeds both panels) while the render still looks plausible — classifier correctness is not visually detectable. |
 | 4 | fig1_convergence | S0 (uniform) and S1 (boundary importance) converge at the Monte-Carlo N^−1/2 rate (fitted log-log slopes {min(slopes0):.2f}…{max(slopes0):.2f} and {min(cells[(m, c)].slopes["S1"] for m in MAPS for c in CAPS):.2f}…{max(cells[(m, c)].slopes["S1"] for m in MAPS for c in CAPS):.2f} across the nine map×cap cells) while S2 (Metropolis seed mutation) stalls at {min(slopes2):.2f}…{max(slopes2):.2f} with a receipted bias of up to 38% on top-decile pixels. |
 | 5 | fig2_equal_budget | At equal 1M budget on the same crop of the mandel cap-1500 cell, S2 is visibly biased and splotchy against the 40M reference (mean ROI relative error {next(r.mean_rel_err for r in mc.rungs["S2"] if r.budget == 1_000_000):.2f} vs S0's {next(r.mean_rel_err for r in mc.rungs["S0"] if r.budget == 1_000_000):.2f}) because SNIS 1/r reweighting cannot restore regions its chains under-visit. |
 
