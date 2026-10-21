@@ -85,7 +85,7 @@ percentile tone anchors, benchmarks, and the alternatives not taken — lives in
 ## Tests & CI
 
 ```bash
-python -m pytest --cov       # 61 tests at 100% line coverage (enforced by CI):
+python -m pytest --cov       # 63 tests at 100% line+branch coverage (enforced by CI):
                              # step rules vs complex arithmetic, escape classification
                              # vs scalar reference, tone monotonicity, histogram bounds,
                              # culling soundness, seed determinism, mirror-symmetry law,
