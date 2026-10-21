@@ -127,6 +127,7 @@ def test_load_font_truetype_and_default_branches(tmp_path):
     source = next((p for p in FONT_PROBES if os.path.exists(p)), None)
     if source is None:
         pytest.skip("no system font available to exercise the truetype branch")
+    assert source is not None  # pytest.skip raises, but narrow for the checker
     fonts = tmp_path / "Fonts"
     fonts.mkdir()
     shutil.copy(source, fonts / "arial.ttf")
