@@ -101,7 +101,20 @@ jobs:
           python scripts/build_collection.py
           git add collection docs/assets/collection.js
           git commit -m "APRS intake: add $name ($HASH) from #$ISSUE"
-          git push origin "$branch"
+          # opened+labeled fire twice for one form submission; the sibling run
+          # may have pushed this deterministic branch first — that is success
+          set +e
+          git push origin "$branch" 2>/tmp/push_err.txt
+          push_rc=$?
+          set -e
+          if [ "$push_rc" -ne 0 ]; then
+            if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+              echo "branch $branch already on the remote (concurrent intake run) — continuing"
+            else
+              cat /tmp/push_err.txt
+              exit 1
+            fi
+          fi
           printf '%s\n' \
             "Validated APRS submission from #$ISSUE (preview \`$HASH\`): **$name**" \
             "" \
@@ -111,9 +124,30 @@ jobs:
             "Human curation only — nothing merges automatically. Checks do not auto-run" \
             "on bot-opened PRs; reviewers can close/reopen or push an empty commit to trigger lanes." \
             > /tmp/pr.md
-          pr_url="$(gh pr create --title "APRS intake: $name (#$ISSUE)" --body-file /tmp/pr.md --head "$branch")"
+          pr_url=""
+          pr_note=""
+          set +e
+          pr_url="$(gh pr create --title "APRS intake: $name (#$ISSUE)" --body-file /tmp/pr.md --head "$branch" 2>/tmp/pr_err.txt)"
+          pr_rc=$?
+          set -e
+          if [ "$pr_rc" -ne 0 ]; then
+            if [ -n "$(gh pr list --head "$branch" --json number --jq '.[0].number' 2>/dev/null)" ]; then
+              pr_url="$(gh pr list --head "$branch" --json url --jq '.[0].url')"
+              echo "PR already open for $branch: $pr_url"
+            elif grep -q "not permitted to create or approve pull requests" /tmp/pr_err.txt; then
+              # repo setting "Allow GitHub Actions to create and approve pull
+              # requests" is OFF — only the repo owner can enable it (Settings
+              # -> Actions -> General). Post the one-click compare URL instead.
+              pr_url="https://github.com/${{ github.repository }}/compare/main...$branch?expand=1"
+              pr_note=" (the repo currently blocks Actions-opened PRs — owner can enable it under Settings -> Actions -> General; meanwhile open the curation PR with one click)"
+              echo "Actions PR creation blocked by repo setting — posting compare URL"
+            else
+              cat /tmp/pr_err.txt
+              exit 1
+            fi
+          fi
           printf '%s\n' \
             "APRS validation :white_check_mark: — record accepted (preview \`$HASH\`), deduped" \
-            "against the collection. Curation PR opened: $pr_url — a human curates;" \
+            "against the collection. Curation PR: $pr_url$pr_note — a human curates;" \
             "nothing merges automatically." > /tmp/comment.md
           gh issue comment "$ISSUE" --body-file /tmp/comment.md
