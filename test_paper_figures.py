@@ -267,6 +267,13 @@ def test_load_hist_missing_key(tmp_path):
     np.savez(p, other=np.ones((4, 5)))
     with pytest.raises(pf.ParseError, match="hist"):
         pf.load_hist(p)
+    # reference-npz layout: raw counts under 'raw'
+    p2 = tmp_path / "ref.npz"
+    np.savez(p2, raw=np.ones((4, 5)))
+    assert pf.load_hist(p2, key="raw").shape == (4, 5)
+    np.savez(tmp_path / "nokey.npz")
+    with pytest.raises(pf.ParseError, match="raw"):
+        pf.load_hist(tmp_path / "nokey.npz", key="raw")
 
 
 def test_load_hist_wrong_ndim(tmp_path):
@@ -471,7 +478,7 @@ def synthetic_paper_tree(root) -> None:
     h = rng.pareto(2.0, (16, 16))
     np.savez(data / "hist_mandel_1500_S0_1000000_study.npz", hist=h)
     np.savez(data / "hist_mandel_1500_S2_1000000_study.npz", hist=h * 0.5)
-    np.savez(data / "ref_mandel_1500.npz", hist=h * 4)
+    np.savez(data / "ref_mandel_1500.npz", raw=h * 4)
     np.savez(data / "fig3_nanbug_unguarded.npz", hist=h * 0.1)
     np.savez(data / "fig3_nanbug_guarded.npz", hist=h)
     for m in pf.parse_gallery(gallery_json(), "t").maps:

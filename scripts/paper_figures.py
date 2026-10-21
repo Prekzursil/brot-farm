@@ -149,11 +149,13 @@ def load_cells(results: Path) -> dict[tuple[str, int], Cell]:
     return cells
 
 
-def load_hist(path: Path) -> np.ndarray:
+def load_hist(path: Path, key: str = "hist") -> np.ndarray:
+    """2-D orbit-density histograms. The convergence study stores per-run
+    histograms under 'hist' and 40M references under 'raw' (raw counts)."""
     with np.load(path) as z:
-        if "hist" not in z:
-            raise ParseError(f"{path}: npz missing 'hist'")
-        h = z["hist"]
+        if key not in z:
+            raise ParseError(f"{path}: npz missing {key!r}")
+        h = z[key]
     if h.ndim != 2:
         raise ParseError(f"{path}: hist must be 2-D, got shape {h.shape}")
     return h.astype(float)
@@ -697,7 +699,7 @@ def build_all(paper_root: Path) -> dict[str, list[Path]]:
         fig2_equal_budget(
             load_hist(data / f"hist_mandel_1500_S0_{budget}_study.npz"),
             load_hist(data / f"hist_mandel_1500_S2_{budget}_study.npz"),
-            load_hist(data / "ref_mandel_1500.npz"),
+            load_hist(data / "ref_mandel_1500.npz", key="raw"),
             cell,
             budget,
         ),
