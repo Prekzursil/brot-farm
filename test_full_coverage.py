@@ -486,3 +486,47 @@ def test_cosbrot_escape_mask_no_escapers_branch():
     # x = cos(x^2)), so the `if escaped:` false path is taken.
     m = cosbrot.escape_mask(np.zeros(8), np.zeros(8), 80)
     assert not m.any()
+
+
+# ------------------------------------------------------------ version_assets
+
+
+def test_version_assets_versions_and_is_idempotent(tmp_path, monkeypatch):
+    import scripts.version_assets as va  # noqa: PLC0415
+
+    docs = tmp_path / "docs" / "assets"
+    docs.mkdir(parents=True)
+    (docs / "app.js").write_text("console.log(1)\n", encoding="utf-8")
+    (tmp_path / "docs" / "index.html").write_text(
+        '<html lang="en"><head><script src="assets/app.js"></script></head></html>\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(va, "DOCS", tmp_path / "docs")
+    changed = va.version_docs()
+    html = (tmp_path / "docs" / "index.html").read_text(encoding="utf-8")
+    assert changed == 1
+    assert "?v=" in html and 'data-build="' in html
+    # idempotent: second run changes nothing
+    assert va.version_docs() == 0
+    assert (tmp_path / "docs" / "index.html").read_text(encoding="utf-8") == html
+    # refreshes a stale hash when the asset changes
+    (docs / "app.js").write_text("console.log(2)\n", encoding="utf-8")
+    assert va.version_docs() == 1
+    html2 = (tmp_path / "docs" / "index.html").read_text(encoding="utf-8")
+    assert html2 != html
+
+
+def test_version_assets_stamps_only_one_build_attr(tmp_path, monkeypatch):
+    import scripts.version_assets as va
+
+    docs = tmp_path / "docs" / "assets"
+    docs.mkdir(parents=True)
+    (docs / "app.js").write_text("x\n", encoding="utf-8")
+    (tmp_path / "docs" / "a.html").write_text(
+        '<html lang="en" data-build="old"><script src="assets/app.js"></script></html>',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(va, "DOCS", tmp_path / "docs")
+    va.version_docs()
+    html = (tmp_path / "docs" / "a.html").read_text(encoding="utf-8")
+    assert html.count("data-build=") == 1 and "old" not in html

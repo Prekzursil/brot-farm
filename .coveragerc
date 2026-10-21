@@ -1,9 +1,13 @@
 [run]
+# verify_site.py is deliberately NOT in the measured set: it is the E2E
+# site harness (browsers required); the CI 'site' job running it green is its
+# test. Decision recorded in docs/BROWSER-REPAIR.md.
 source =
     buddhabrot
     cosbrot
     brot_farm
     topup
+    scripts.version_assets
 branch = True
 
 [report]

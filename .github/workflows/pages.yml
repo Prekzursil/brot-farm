@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Asset versioning drift tripwire
+        run: python scripts/version_assets.py --check
       - uses: actions/configure-pages@v5
         with:
           # self-enable Pages so a first push to a fresh clone can never race

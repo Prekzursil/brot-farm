@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html data-build="5fdda3a5" lang="en">
 <head>
+<script>
+/* error banner: works even if every other asset fails; shown only on error */
+(function(){function show(m){var b=document.getElementById('fd-error-banner');if(!b){b=document.createElement('div');b.id='fd-error-banner';b.style.cssText='position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#3a1418;color:#ffd9d9;border:1px solid #a33;padding:10px 12px;font:12px/1.5 monospace;border-radius:8px;display:flex;gap:10px;align-items:center';b.innerHTML='<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button type="button" style="all:unset;cursor:pointer;color:#ffb3b3;text-decoration:underline">copy report</button>';var add=function(){document.body.appendChild(b);b.querySelector('button').onclick=function(){var r='url='+location.href+' build='+(document.documentElement.dataset.build||'?')+' ua='+navigator.userAgent+'String.fromCharCode(10)'+(b.dataset.log||'');navigator.clipboard&&navigator.clipboard.writeText(r);};};document.body?add():document.addEventListener('DOMContentLoaded',add);}b.dataset.log=((b.dataset.log?b.dataset.log+'String.fromCharCode(10)':'')+m).slice(-2000);b.querySelector('span').textContent='Fractal Darkroom error: '+(m+'').slice(0,160);}window.addEventListener('error',function(e){show((e.message||'script error')+' @'+((e.filename||'').split('/').pop()||'')+':'+e.lineno)});window.addEventListener('unhandledrejection',function(e){show('unhandled rejection: '+((e.reason&&e.reason.message)||e.reason))})})();
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fractal Darkroom — long-exposure photographs of mathematical escape</title>
 <meta name="description" content="A Buddhabrot family renderer: 17 orbit-density fractals, interactive math playground, and a complete code walkthrough.">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=a8070491">
 </head>
 <body>
 <nav class="top">
@@ -41,7 +46,7 @@
     </div>
   </div>
   <div>
-    <img id="develop-photo" src="assets/hero-buddha.jpg" alt="The Buddhabrot: density of orbit points of samples escaping the Mandelbrot set, a symmetric glowing figure">
+    <img id="develop-photo" src="assets/hero-buddha.jpg?v=8c953fc0" alt="The Buddhabrot: density of orbit points of samples escaping the Mandelbrot set, a symmetric glowing figure">
     <div class="hud" id="develop-hud" style="text-align:center"></div>
   </div>
 </section>
@@ -52,39 +57,39 @@ replay, histogram, tone-map — and swaps the beating heart: the update rule.
 Click any card to open it live in the playground.</p>
 
 <div class="gallery" id="gallery">
-  <figure class="reveal"><a href="playground.html?map=anti"><img src="assets/t-anti.jpg" alt="Antibuddhabrot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=anti"><img src="assets/t-anti.jpg?v=c34a86ca" alt="Antibuddhabrot" loading="lazy"></a>
     <figcaption><b>Antibuddhabrot</b><span class="f">orbits that never escape — the negative</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=nebula"><img src="assets/t-nebula.jpg" alt="Nebulabrot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=nebula"><img src="assets/t-nebula.jpg?v=4c3b341a" alt="Nebulabrot" loading="lazy"></a>
     <figcaption><b>Nebulabrot</b><span class="f">iteration caps 50 / 500 / 5000</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=julia"><img src="assets/t-julia.jpg" alt="Julia-brot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=julia"><img src="assets/t-julia.jpg?v=97924fa2" alt="Julia-brot" loading="lazy"></a>
     <figcaption><b>Julia-brot</b><span class="f">fixed c = −0.7 + 0.27i, z-space</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=z3"><img src="assets/t-z3.jpg" alt="Cubic brot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=z3"><img src="assets/t-z3.jpg?v=96b60e5b" alt="Cubic brot" loading="lazy"></a>
     <figcaption><b>Cubic</b><span class="f">z ↦ z³ + c — 2-fold mandala</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=z4"><img src="assets/t-z4.jpg" alt="Quartic brot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=z4"><img src="assets/t-z4.jpg?v=c72876f6" alt="Quartic brot" loading="lazy"></a>
     <figcaption><b>Quartic</b><span class="f">z ↦ z⁴ + c — 3-fold mandala</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=z5"><img src="assets/t-z5.jpg" alt="Quintic brot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=z5"><img src="assets/t-z5.jpg?v=5671699a" alt="Quintic brot" loading="lazy"></a>
     <figcaption><b>Quintic</b><span class="f">z ↦ z⁵ + c — 4-fold mandala</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=ship"><img src="assets/t-ship.jpg" alt="Burning Ship brot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=ship"><img src="assets/t-ship.jpg?v=65d33a08" alt="Burning Ship brot" loading="lazy"></a>
     <figcaption><b>Burning Ship</b><span class="f">(|x| + i|y|)² + c — the fold breaks symmetry</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=tricorn"><img src="assets/t-tricorn.jpg" alt="Tricorn brot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=tricorn"><img src="assets/t-tricorn.jpg?v=a4267440" alt="Tricorn brot" loading="lazy"></a>
     <figcaption><b>Tricorn</b><span class="f">z̄² + c — conjugation squared</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=celtic"><img src="assets/t-celtic.jpg" alt="Celtic brot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=celtic"><img src="assets/t-celtic.jpg?v=cb847d76" alt="Celtic brot" loading="lazy"></a>
     <figcaption><b>Celtic</b><span class="f">|x² − y²| + 2ixy + c</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=buffalo"><img src="assets/t-buffalo.jpg" alt="Buffalo brot" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=buffalo"><img src="assets/t-buffalo.jpg?v=0f9ccaa7" alt="Buffalo brot" loading="lazy"></a>
     <figcaption><b>Buffalo</b><span class="f">|x² − y²| + i|2xy| — double fold</span></figcaption></figure>
-  <figure class="wide reveal"><a href="playground.html?map=sinz"><img src="assets/t-sinz.jpg" alt="Sin brot" loading="lazy"></a>
+  <figure class="wide reveal"><a href="playground.html?map=sinz"><img src="assets/t-sinz.jpg?v=f56ce4da" alt="Sin brot" loading="lazy"></a>
     <figcaption><b>Sinbrot</b><span class="f">z ↦ sin z + c — prisoners live in a band</span></figcaption></figure>
-  <figure class="wide reveal"><a href="playground.html?map=cosz"><img src="assets/t-cosz.jpg" alt="Cos brot" loading="lazy"></a>
+  <figure class="wide reveal"><a href="playground.html?map=cosz"><img src="assets/t-cosz.jpg?v=a007e4a2" alt="Cos brot" loading="lazy"></a>
     <figcaption><b>Cosbrot</b><span class="f">z ↦ cos z + c</span></figcaption></figure>
-  <figure class="tall reveal"><a href="playground.html?map=cosfull"><img src="assets/t-cosfull.jpg" alt="Cosfull mutation" loading="lazy"></a>
+  <figure class="tall reveal"><a href="playground.html?map=cosfull"><img src="assets/t-cosfull.jpg?v=cd837adf" alt="Cosfull mutation" loading="lazy"></a>
     <figcaption><b>Cosfull mutation</b><span class="f">x′ = cos(x² − y²), y′ = 2xy — tall wanderer</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=cosy"><img src="assets/t-cosy.jpg" alt="Y-cosine mutation" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=cosy"><img src="assets/t-cosy.jpg?v=904234c9" alt="Y-cosine mutation" loading="lazy"></a>
     <figcaption><b>Y-cosine mutation</b><span class="f">x′ = x² − y², y′ = cos 2xy</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=tanmut"><img src="assets/t-tanmut.jpg" alt="Tan mutation" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=tanmut"><img src="assets/t-tanmut.jpg?v=7d328c38" alt="Tan mutation" loading="lazy"></a>
     <figcaption><b>Tan mutation</b><span class="f">x′ = tan x² − y, y′ = 2xy</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=sinhmut"><img src="assets/t-sinhmut.jpg" alt="Sinh mutation" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=sinhmut"><img src="assets/t-sinhmut.jpg?v=63acc3af" alt="Sinh mutation" loading="lazy"></a>
     <figcaption><b>Sinh mutation</b><span class="f">x′ = sinh x² − y, y′ = 2xy</span></figcaption></figure>
-  <figure class="reveal"><a href="playground.html?map=expmut"><img src="assets/t-expmut.jpg" alt="Exp mutation" loading="lazy"></a>
+  <figure class="reveal"><a href="playground.html?map=expmut"><img src="assets/t-expmut.jpg?v=d79ead2a" alt="Exp mutation" loading="lazy"></a>
     <figcaption><b>Exp mutation</b><span class="f">x′ = exp x² − y — no prisoners at all</span></figcaption></figure>
 </div>
 
@@ -156,6 +161,6 @@ as interesting as the pictures.</p>
   Fractal Darkroom · MIT · rendered with numpy, documented with plain HTML ·
   <a href="https://github.com/Prekzursil/fractal-darkroom">source</a>
 </footer>
-<script src="assets/app.js"></script>
+<script src="assets/app.js?v=81e01ed8"></script>
 </body>
 </html>

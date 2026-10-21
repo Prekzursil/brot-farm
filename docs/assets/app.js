@@ -50,6 +50,7 @@ document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
   view.height = H;
   view.style.cssText =
     'width:100%;height:auto;display:block;border-radius:14px;border:1px solid #23232f;';
+  view.id = 'develop-photo-view';
   img.replaceWith(view);
   const ctx = view.getContext('2d');
   const out = ctx.createImageData(W, H);
