@@ -11,6 +11,7 @@ source =
     scripts.validate_aprs
     scripts.build_collection
     brot_build
+    brot_samplers
 branch = True
 
 [report]
