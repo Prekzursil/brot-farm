@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-build="82c490d0" lang="en">
+<html data-build="be153f77" lang="en">
 <head>
 <script>
 /* error banner: works even if every other asset fails; shown only on error */
@@ -140,6 +140,43 @@ Python build suite from the catalogue below.</p>
   <ul id="bu-catalogue" style="list-style:none;padding:0;display:flex;flex-direction:column;gap:10px"></ul>
 </div>
 
+<!-- ========================================================== EXPERIMENTS -->
+<h2 class="reveal">6 &middot; Experiments &mdash; mutate, pin, share</h2>
+<p class="reveal">The laboratory notebook. Every experiment &mdash; map or operator grammar,
+constants, caps, window, tone gamma &mdash; serializes to a compact URL hash, so a copied link
+lands anyone on <b>exactly</b> your state. <b>Surprise me</b> composes a random <i>valid</i>
+grammar from a seed (same seed, same map), <b>Mutate this</b> perturbs exactly one operator of
+the current map and shows it side-by-side with its base, and the suggestion engine scores
+seeded candidates by escape fraction and dynamic range. Pin favourites to
+<code>localStorage</code>, export/import them as JSON, and save any experiment as JSON or
+PNG &mdash; everything offline, no server, works straight off a <code>file://</code> copy.</p>
+<div class="panel reveal" id="exp-panel">
+  <div class="controls">
+    <label>seed <input type="number" id="exp-seed" value="12345" min="0" max="2147483647" style="width:96px"></label>
+    <button class="btn primary" id="exp-surprise">&#127922; Surprise me</button>
+    <button class="btn" id="exp-mutate">&#129716; Mutate this</button>
+    <button class="btn" id="exp-resuggest">&#128300; re-suggest</button>
+    <button class="btn" id="exp-pin">&#128204; Pin</button>
+    <button class="btn" id="exp-share">&#128279; copy link</button>
+  </div>
+  <div class="controls">
+    <button class="btn" id="exp-save-png">save PNG</button>
+    <button class="btn" id="exp-save-json">save experiment JSON</button>
+    <label class="btn" for="exp-import" style="cursor:pointer">import JSON&hellip;</label>
+    <input type="file" id="exp-import" accept=".json,application/json" hidden>
+    <button class="btn" id="exp-export-pins">export pins</button>
+    <label class="btn" for="exp-import-pins" style="cursor:pointer">import pins&hellip;</label>
+    <input type="file" id="exp-import-pins" accept=".json,application/json" hidden>
+  </div>
+  <div class="hud" id="exp-hud" style="min-height:52px">experiments ready</div>
+  <h3 style="margin-bottom:6px">Suggestions &mdash; top 3 seeded mutations of the current map
+  (scored by escape fraction in the 0.15&ndash;0.9 band + preview dynamic range; click to apply)</h3>
+  <div id="exp-suggest" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+  <h3 style="margin-bottom:6px">Pinned favourites (localStorage &mdash; survive reloads; drag a
+  JSON file onto this panel to import)</h3>
+  <ul id="exp-pins" style="list-style:none;padding:0;display:flex;flex-direction:column;gap:8px"></ul>
+</div>
+
 <!-- ========================================================== SANDBOX IDEAS -->
 <h2 class="reveal">4 · Formulas worth typing</h2>
 <p class="reveal">The x′ / y′ boxes accept any JavaScript expression in <code>x</code>,
@@ -162,6 +199,6 @@ A few with known-good results:</p>
   Fractal Darkroom · MIT · all computation in your browser · <a href="index.html">back to the gallery →</a>
 </footer>
 <script src="assets/catalogue.js?v=x"></script>
-<script src="assets/playground.js?v=74717c34"></script>
+<script src="assets/playground.js?v=c00c5b45"></script>
 </body>
 </html>

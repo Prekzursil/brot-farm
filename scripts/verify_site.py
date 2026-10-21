@@ -186,6 +186,79 @@ def check_page(pg, base: str, page_name: str, mobile: bool) -> None:
             "() => document.getElementById('bu-catalogue').children.length"
         )
         record(lane, "build-catalogue", n_cat > 0, f"{n_cat} entries")
+        # L4 experiments: seeded surprise registers a map, mutate renders a
+        # visibly different side-by-side, pin adds a localStorage entry,
+        # suggestions are deterministic, and a serialized state in the URL
+        # hash restores exactly after a reload.
+        pg.click("#exp-surprise")
+        pg.wait_for_timeout(400)
+        surprised = pg.evaluate(
+            "() => [...document.getElementById('ot-map').options]"
+            ".some(o => o.value === 'exp_s12345')"
+        )
+        record(lane, "exp-surprise", bool(surprised), "seed 12345 -> exp_s12345")
+        pg.click("#exp-mutate")
+        pg.wait_for_timeout(400)
+        mutated = pg.evaluate(
+            "() => [...document.getElementById('ot-map').options]"
+            ".some(o => o.value === 'exp_mut1')"
+        )
+        base_lum = pg.evaluate(CANVAS_LUM, "bu-base") or 0
+        record(
+            lane,
+            "exp-mutate",
+            bool(mutated) and base_lum > 1,
+            f"registered={mutated} base-lum={round(base_lum, 1)}",
+        )
+        suggest0 = pg.evaluate(
+            "() => [...document.querySelectorAll('#exp-suggest canvas')]"
+            ".map(c => c.toDataURL()).join('|')"
+        )
+        pg.click("#exp-resuggest")
+        pg.wait_for_timeout(300)
+        suggest1 = pg.evaluate(
+            "() => [...document.querySelectorAll('#exp-suggest canvas')]"
+            ".map(c => c.toDataURL()).join('|')"
+        )
+        n_sug = suggest0.count("data:image/png")
+        record(
+            lane,
+            "exp-suggest",
+            n_sug == 3 and suggest0 == suggest1,
+            f"{n_sug} thumbs, deterministic={suggest0 == suggest1}",
+        )
+        pg.click("#exp-pin")
+        pg.wait_for_timeout(200)
+        pins = pg.evaluate("() => document.getElementById('exp-pins').children.length")
+        record(lane, "exp-pin", pins > 0, f"{pins} pinned")
+        state = {
+            "v": 1,
+            "map": {
+                "family": "power",
+                "real": "cos",
+                "imag": "plain",
+                "power": 4,
+                "name": "probe_restore",
+            },
+            "cap": 200,
+            "gamma": 1.55,
+            "seed": 777,
+        }
+        pg.evaluate(
+            "(s) => { location.hash = '#exp=' + encodeURIComponent(JSON.stringify(s)); }",
+            state,
+        )
+        pg.reload(wait_until="load")
+        pg.wait_for_timeout(1200)
+        exp_hud = (pg.text_content("#exp-hud") or "").replace("\n", " ")
+        gamma_back = pg.evaluate("() => document.getElementById('mb-gamma').value")
+        record(
+            lane,
+            "exp-hash-restore",
+            "restored" in exp_hud and gamma_back == "1.55",
+            f"hud={exp_hud[:60]!r} gamma={gamma_back}",
+        )
+        pg.evaluate("() => { location.hash = ''; }")
     record(lane, "console-clean", not errors, "; ".join(errors[:3])[:180])
 
 

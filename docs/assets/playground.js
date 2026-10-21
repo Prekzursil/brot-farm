@@ -115,6 +115,22 @@ const ALIASES = { anti: 'mandel', nebula: 'mandel', julia: 'mandel' };
 const qs = new URLSearchParams(location.search);
 let initialMap = qs.get('map') || 'mandel';
 
+// cross-module hooks: the theater / developing-room IIFEs expose accessors
+// here so the experiments module (L4) can read and restore shared state.
+const SHARED = {};
+
+// deterministic PRNG (mulberry32): every seeded feature below derives its
+// choices from this stream only — same seed, same experiment, no Math.random.
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /* ------------------------------------------------- formula sandbox compile */
 function compileFormula(fxSrc, fySrc) {
   const names = Object.getOwnPropertyNames(Math).filter((k) => typeof Math[k] === 'function');
@@ -169,6 +185,14 @@ function currentMap(sel) {
     escaped = false;
   let playing = true;
   let bg = null; // prisoner-country layer
+  // L4 experiments hooks (read c / custom status; restore a custom formula)
+  SHARED.theaterC = () => [c[0], c[1]];
+  SHARED.usesCustom = () => custom !== null;
+  SHARED.setCustom = (m) => {
+    custom = m ? { ...m } : null;
+    buildBG();
+    reset();
+  };
 
   function win() {
     return active().win || currentMap(mapSel).win;
@@ -453,6 +477,7 @@ function currentMap(sel) {
 
   const JULIA_C = [-0.7, 0.27];
   let mode = 'escape'; // "escape" | "anti" | "julia"
+  SHARED.mbMode = () => mode; // L4: experiment state readback
   if (initialMap === 'anti') mode = 'anti';
   if (initialMap === 'julia') mode = 'julia';
   if (initialMap === 'nebula') document.getElementById('mb-cap').value = 400;
@@ -828,7 +853,9 @@ function buildMap(name, grammar) {
     };
   }
   function redraw() {
-    current = buildMap((nameEl.value || 'custom').replace(/[^a-z0-9_]/gi, ''), grammar());
+    const g = grammar();
+    current = buildMap((nameEl.value || 'custom').replace(/[^a-z0-9_]/gi, ''), g);
+    current.grammar = { ...g }; // L4: mutations/pins can read the exact grammar
     // quick escape-time preview (not orbit density: instant feedback)
     const N = cv.width,
       img = ctx.createImageData(N, N);
@@ -942,4 +969,817 @@ function buildMap(name, grammar) {
     }
   }
   redraw();
+})();
+
+/* ====================================================== EXPERIMENTS (L4) */
+// Experiment = { map key | grammar {family,real,imag,power,name} } + constants
+// (orbit c, mode) + caps (iteration cap, samples/frame) + window override +
+// tone gamma + seed. State <-> compact JSON <-> URL hash, shareable links,
+// seeded surprise / mutate / suggestions, localStorage pins, JSON/PNG save
+// and validated import (file picker + drag-drop). No dependencies, offline.
+(function experimentsUI() {
+  const panel = document.getElementById('exp-panel');
+  if (!panel) return;
+  const hud = document.getElementById('exp-hud');
+  const seedEl = document.getElementById('exp-seed');
+  const suggestBox = document.getElementById('exp-suggest');
+  const pinsList = document.getElementById('exp-pins');
+  const PINS_KEY = 'fd-pins-v1';
+  const FAMILIES = ['mutation', 'fold', 'power'];
+  const REAL_KEYS = Object.keys(BUILD.real);
+  const IMAG_KEYS = Object.keys(BUILD.imag);
+  // canonical grammars for the stock maps that the operator grammar can express
+  const STOCK_GRAMMAR = {
+    mandel: { family: 'power', real: 'cos', imag: 'plain', power: 2 },
+    z3: { family: 'power', real: 'cos', imag: 'plain', power: 3 },
+    z4: { family: 'power', real: 'cos', imag: 'plain', power: 4 },
+    z5: { family: 'power', real: 'cos', imag: 'plain', power: 5 },
+    ship: { family: 'fold', real: 'cos', imag: 'abs', power: 2 },
+    tricorn: { family: 'fold', real: 'cos', imag: 'neg', power: 2 },
+    celtic: { family: 'fold', real: 'abs', imag: 'plain', power: 2 },
+    buffalo: { family: 'fold', real: 'abs', imag: 'abs', power: 2 },
+    cosmut: { family: 'mutation', real: 'cos', imag: 'plain', power: 2 },
+    tanmut: { family: 'mutation', real: 'tan', imag: 'plain', power: 2 },
+    sinhmut: { family: 'mutation', real: 'sinh', imag: 'plain', power: 2 },
+    expmut: { family: 'mutation', real: 'exp', imag: 'plain', power: 2 },
+  };
+  let mutateN = 0;
+  let currentGrammar = null;
+
+  /* ------------------------------------------------------------- HUD + msg */
+  function hudMsg(html, isErr) {
+    hud.innerHTML =
+      (isErr ? '<b style="color:#d96a6a">' + 'experiment error:</b> ' : '<b>·</b> ') + html;
+  }
+  const esc = (s) =>
+    String(s).replace(
+      /[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+    );
+
+  /* ------------------------------------------------ grammar lookup + build */
+  function grammarFor(key) {
+    const m = MAPS[key];
+    if (m && m.grammar) return { ...m.grammar };
+    if (STOCK_GRAMMAR[key]) return { ...STOCK_GRAMMAR[key] };
+    if (key.startsWith('cat_') && window.BROT_CATALOGUE) {
+      const e = window.BROT_CATALOGUE.find((c) => 'cat_' + c.name === key);
+      if (e && e.grammar) return { ...e.grammar };
+    }
+    return null;
+  }
+  function registerMap(key, m) {
+    const existing = MAPS[key];
+    if (existing) Object.assign(existing, m);
+    else MAPS[key] = m;
+    for (const id of ['ot-map', 'mb-map']) {
+      const sel = document.getElementById(id);
+      if (!sel) continue;
+      let opt = [...sel.options].find((o) => o.value === key);
+      if (!opt) {
+        opt = Object.assign(document.createElement('option'), { value: key });
+        sel.appendChild(opt);
+      }
+      opt.textContent = m.label;
+    }
+  }
+  function selectMap(key) {
+    for (const id of ['ot-map', 'mb-map']) {
+      const sel = document.getElementById(id);
+      if (!sel || ![...sel.options].some((o) => o.value === key)) continue;
+      const changed = sel.value !== key;
+      sel.value = key;
+      if (changed && id === 'ot-map') sel.dispatchEvent(new Event('change'));
+    }
+  }
+  function syncBuildSelects(g) {
+    const set = (id, v) => {
+      const el = document.getElementById(id);
+      if (el && [...el.options].some((o) => o.value === String(v))) el.value = String(v);
+    };
+    set('bu-family', g.family);
+    set('bu-real', g.real);
+    set('bu-imag', g.imag);
+    set('bu-power', g.power);
+    const f = document.getElementById('bu-family');
+    if (f) f.dispatchEvent(new Event('change')); // one redraw of the preview
+  }
+  function renderEscapeTime(cv, m) {
+    const ctx = cv.getContext('2d');
+    const N = cv.width,
+      Hc = cv.height;
+    const img = ctx.createImageData(N, Hc);
+    const w = m.win || [-2.5, 2.5, -2.5, 2.5];
+    let k = 0;
+    for (let py = 0; py < Hc; py++) {
+      for (let px = 0; px < N; px++, k += 4) {
+        const cx = w[0] + (px / N) * (w[1] - w[0]);
+        const cy = w[3] - (py / Hc) * (w[3] - w[2]);
+        let x = cx,
+          y = cy,
+          n = 0;
+        for (; n < 80; n++) {
+          [x, y] = m.step(x, y, cx, cy);
+          if (!isFinite(x) || !isFinite(y) || m.gone(x, y)) break;
+        }
+        const t = n / 80;
+        img.data[k] = 9 + 246 * t ** 1.6;
+        img.data[k + 1] = 9 + 230 * t ** 2.2;
+        img.data[k + 2] = 14 + 200 * t ** 3;
+        img.data[k + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  /* ----------------------------------------------- state: read / validate */
+  function currentState() {
+    const otKey = document.getElementById('ot-map').value;
+    const g = currentGrammar || grammarFor(otKey);
+    const st = { v: 1, map: g ? { ...g } : otKey };
+    if (SHARED.usesCustom && SHARED.usesCustom()) {
+      st.fx = document.getElementById('ot-fx').value;
+      st.fy = document.getElementById('ot-fy').value;
+    }
+    if (SHARED.theaterC) st.c = SHARED.theaterC();
+    st.mode = SHARED.mbMode ? SHARED.mbMode() : 'escape';
+    st.cap = +document.getElementById('mb-cap').value;
+    st.rate = +document.getElementById('mb-rate').value;
+    st.gamma = +document.getElementById('mb-gamma').value;
+    const m = MAPS[otKey];
+    if (m && m.win && g && m.grammar) st.win = m.win.slice(); // grammar maps carry their window
+    const seed = parseInt(seedEl.value, 10);
+    if (Number.isFinite(seed)) st.seed = seed;
+    return st;
+  }
+  function compact(st) {
+    // drop defaults so the hash stays short; round-trip lossless
+    const out = { v: 1, map: st.map };
+    const defs = [
+      ['fx', 'x*x - y*y + cx'],
+      ['fy', '2*x*y + cy'],
+    ];
+    for (const [k, d] of defs) if (st[k] !== undefined && st[k] !== d) out[k] = st[k];
+    if (st.c !== undefined && (st.c[0] !== -0.1 || st.c[1] !== 0.65)) out.c = st.c;
+    if (st.mode !== undefined && st.mode !== 'escape') out.mode = st.mode;
+    if (st.cap !== undefined && st.cap !== 120) out.cap = st.cap;
+    if (st.rate !== undefined && st.rate !== 3000) out.rate = st.rate;
+    if (st.gamma !== undefined && Math.abs(st.gamma - 1) > 1e-9) out.gamma = st.gamma;
+    if (st.win !== undefined) out.win = st.win;
+    if (st.seed !== undefined) out.seed = st.seed;
+    return out;
+  }
+  function validateState(st, where) {
+    const p = (m) => `${where}: ${m}`;
+    if (!st || typeof st !== 'object' || Array.isArray(st))
+      return { ok: false, msg: p('top level must be a JSON object') };
+    if (st.v !== undefined && st.v !== 1)
+      return { ok: false, msg: p(`unsupported state version ${st.v} (expected 1)`) };
+    let map = st.map;
+    if (map === undefined) map = 'mandel';
+    if (typeof map === 'string') {
+      if (!/^[a-z0-9_]{1,40}$/.test(map) || !(map in STOCK_GRAMMAR || map in MAPS))
+        return { ok: false, msg: p(`unknown map key ${JSON.stringify(map)}`) };
+    } else if (map && typeof map === 'object' && !Array.isArray(map)) {
+      if (!FAMILIES.includes(map.family))
+        return { ok: false, msg: p(`map.family must be one of ${FAMILIES.join('|')}`) };
+      if (!REAL_KEYS.includes(map.real))
+        return { ok: false, msg: p(`map.real must be one of ${REAL_KEYS.join('|')}`) };
+      if (!IMAG_KEYS.includes(map.imag))
+        return { ok: false, msg: p(`map.imag must be one of ${IMAG_KEYS.join('|')}`) };
+      if (![2, 3, 4, 5].includes(map.power))
+        return { ok: false, msg: p('map.power must be one of 2|3|4|5') };
+      if (map.name !== undefined && (typeof map.name !== 'string' || map.name.length > 24))
+        return { ok: false, msg: p('map.name must be a string of at most 24 chars') };
+    } else {
+      return { ok: false, msg: p('map must be a key string or a grammar object') };
+    }
+    const rangeOk = (k, lo, hi) =>
+      st[k] === undefined ||
+      (typeof st[k] === 'number' && Number.isFinite(st[k]) && st[k] >= lo && st[k] <= hi) ||
+      p(`${k} must be a number in [${lo}, ${hi}]`);
+    for (const [k, lo, hi] of [
+      ['cap', 10, 400],
+      ['rate', 200, 8000],
+      ['gamma', 0.4, 2.2],
+    ]) {
+      const r = rangeOk(k, lo, hi);
+      if (typeof r === 'string') return { ok: false, msg: r };
+    }
+    if (st.mode !== undefined && !['escape', 'anti', 'julia'].includes(st.mode))
+      return { ok: false, msg: p('mode must be one of escape|anti|julia') };
+    if (
+      st.seed !== undefined &&
+      !(Number.isInteger(st.seed) && st.seed >= 0 && st.seed <= 2147483647)
+    )
+      return { ok: false, msg: p('seed must be an integer in [0, 2147483647]') };
+    for (const k of ['fx', 'fy'])
+      if (st[k] !== undefined && (typeof st[k] !== 'string' || st[k].length > 200))
+        return { ok: false, msg: p(`${k} must be a formula string of at most 200 chars`) };
+    if (
+      st.c !== undefined &&
+      !(
+        Array.isArray(st.c) &&
+        st.c.length === 2 &&
+        st.c.every((v) => Number.isFinite(v) && Math.abs(v) <= 100)
+      )
+    )
+      return { ok: false, msg: p('c must be [x, y] with |x|,|y| <= 100') };
+    if (
+      st.win !== undefined &&
+      st.win !== null &&
+      !(
+        Array.isArray(st.win) &&
+        st.win.length === 4 &&
+        st.win.every((v) => Number.isFinite(v) && Math.abs(v) <= 1e3) &&
+        st.win[1] > st.win[0] &&
+        st.win[3] > st.win[2]
+      )
+    )
+      return { ok: false, msg: p('win must be [x0, x1, y0, y1] with x1 > x0, y1 > y0') };
+    const norm = { ...st, map };
+    return { ok: true, st: norm };
+  }
+  function parseExperimentText(text, where) {
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      return { ok: false, msg: `${where}: not valid JSON (${err.message})` };
+    }
+    if (Array.isArray(data)) return { ok: true, pins: data };
+    return validateState(data, where);
+  }
+
+  /* ---------------------------------------------------------- state: apply */
+  function setKnob(id, v) {
+    const el = document.getElementById(id);
+    if (!el || v === undefined) return;
+    el.value = String(v);
+    el.dispatchEvent(new Event('input'));
+  }
+  function applyState(st, source) {
+    let label;
+    if (st.map && typeof st.map === 'object') {
+      const g = st.map;
+      const name = (g.name || 'exp').replace(/[^a-z0-9_]/gi, '').toLowerCase() || 'exp';
+      const m = buildMap(name, g);
+      m.grammar = { ...g };
+      if (st.win) m.win = st.win.slice();
+      registerMap('exp_' + name, m);
+      syncBuildSelects(g);
+      selectMap('exp_' + name);
+      currentGrammar = { ...g, name };
+      label = m.label;
+    } else {
+      let key = st.map || 'mandel';
+      if (st.win) {
+        const src = MAPS[key] || MAPS.mandel;
+        const copy = { ...src, win: st.win.slice() };
+        if (copy.grammar) copy.grammar = { ...copy.grammar };
+        registerMap('exp_ovr_' + key, copy);
+        key = 'exp_ovr_' + key;
+      }
+      selectMap(key);
+      currentGrammar = grammarFor(st.map || 'mandel');
+      label = MAPS[key].label;
+    }
+    if (st.fx || st.fy) {
+      try {
+        const m = compileFormula(st.fx || 'x*x - y*y + cx', st.fy || '2*x*y + cy');
+        SHARED.setCustom({ ...m, win: st.win ? st.win.slice() : [-3, 3, -3, 3] });
+        document.getElementById('ot-fx').value = st.fx || 'x*x - y*y + cx';
+        document.getElementById('ot-fy').value = st.fy || '2*x*y + cy';
+        label = 'custom formula';
+      } catch (err) {
+        hudMsg(
+          `${source}: custom formula rejected (${esc(err.message)}) — map restored without it`,
+          true,
+        );
+      }
+    }
+    setKnob('mb-cap', st.cap);
+    setKnob('mb-rate', st.rate);
+    setKnob('mb-gamma', st.gamma);
+    if (st.mode) {
+      const b = document.querySelector(`button[data-mode="${st.mode}"]`);
+      if (b) b.click();
+    }
+    if (st.c) document.dispatchEvent(new CustomEvent('brot:pick-c', { detail: { c: st.c } }));
+    if (st.seed !== undefined) seedEl.value = String(st.seed);
+    writeHash();
+    renderSuggestions();
+    hudMsg(
+      `${esc(source)} · map <b>${esc(label)}</b> · cap ${st.cap ?? 120} · γ ${st.gamma ?? 1}` +
+        (st.seed !== undefined ? ` · seed ${st.seed}` : ''),
+    );
+    return label;
+  }
+  function writeHash() {
+    const enc = encodeURIComponent(JSON.stringify(compact(currentState())));
+    try {
+      history.replaceState(null, '', '#exp=' + enc);
+    } catch {
+      location.hash = 'exp=' + enc; // file:// in strict embedders
+    }
+  }
+
+  /* ---------------------------------------------- seeded grammar operators */
+  function pickGrammar(rand) {
+    return {
+      family: FAMILIES[Math.floor(rand() * 3)],
+      real: REAL_KEYS[Math.floor(rand() * REAL_KEYS.length)],
+      imag: IMAG_KEYS[Math.floor(rand() * IMAG_KEYS.length)],
+      power: 2 + Math.floor(rand() * 4),
+    };
+  }
+  function escapeFraction(m, gridN, cap) {
+    const w = m.win || [-2.5, 2.5, -2.5, 2.5];
+    let esc = 0;
+    for (let gy = 0; gy < gridN; gy++) {
+      for (let gx = 0; gx < gridN; gx++) {
+        const cx = w[0] + ((gx + 0.5) / gridN) * (w[1] - w[0]);
+        const cy = w[3] - ((gy + 0.5) / gridN) * (w[3] - w[2]);
+        let x = cx,
+          y = cy,
+          k = 0;
+        for (; k < cap; k++) {
+          [x, y] = m.step(x, y, cx, cy);
+          if (!isFinite(x) || !isFinite(y) || m.gone(x, y)) break;
+        }
+        if (k < cap) esc++;
+      }
+    }
+    return esc / (gridN * gridN);
+  }
+  function surpriseFrom(seed) {
+    const rand = rng(seed);
+    let g = pickGrammar(rand);
+    for (let attempt = 1; attempt <= 24; attempt++) {
+      const frac = escapeFraction(buildMap('probe', g), 16, 40);
+      if (frac > 0.05 && frac < 0.95) return { g, attempt, frac };
+      g = pickGrammar(rand);
+    }
+    return { g, attempt: 25, frac: null }; // grammar is valid by construction regardless
+  }
+  function mutateGrammar(g, rand) {
+    const g2 = { ...g };
+    const dims =
+      g.family === 'mutation'
+        ? ['real', 'imag']
+        : g.family === 'fold'
+          ? ['imag', 'power', 'real']
+          : ['power'];
+    dims.push('family');
+    const dim = dims[Math.floor(rand() * dims.length)];
+    if (dim === 'family') {
+      const fams = FAMILIES.filter((f) => f !== g.family);
+      g2.family = fams[Math.floor(rand() * fams.length)];
+    } else if (dim === 'power') {
+      do {
+        g2.power = 2 + Math.floor(rand() * 4);
+      } while (g2.power === g.power);
+    } else if (dim === 'real') {
+      if (g.family === 'fold')
+        g2.real = g.real === 'abs' ? 'cos' : 'abs'; // abs-fold on/off
+      else
+        do {
+          g2.real = REAL_KEYS[Math.floor(rand() * REAL_KEYS.length)];
+        } while (g2.real === g.real);
+    } else {
+      do {
+        g2.imag = IMAG_KEYS[Math.floor(rand() * IMAG_KEYS.length)];
+      } while (g2.imag === g.imag);
+    }
+    return g2;
+  }
+  function describeChange(a, b) {
+    for (const k of ['family', 'real', 'imag', 'power'])
+      if (a[k] !== b[k]) return `${k}: ${a[k]} → ${b[k]}`;
+    return 'no change';
+  }
+  function scoreGrammar(g) {
+    const m = buildMap('score', g);
+    const w = m.win || [-2.5, 2.5, -2.5, 2.5];
+    const G = 20,
+      cap = 40;
+    let esc = 0,
+      kmin = cap,
+      kmax = 0;
+    for (let gy = 0; gy < G; gy++) {
+      for (let gx = 0; gx < G; gx++) {
+        const cx = w[0] + ((gx + 0.5) / G) * (w[1] - w[0]);
+        const cy = w[3] - ((gy + 0.5) / G) * (w[3] - w[2]);
+        let x = cx,
+          y = cy,
+          k = 0;
+        for (; k < cap; k++) {
+          [x, y] = m.step(x, y, cx, cy);
+          if (!isFinite(x) || !isFinite(y) || m.gone(x, y)) break;
+        }
+        if (k < cap) esc++;
+        if (k < kmin) kmin = k;
+        if (k > kmax) kmax = k;
+      }
+    }
+    const frac = esc / (G * G);
+    const range = (kmax - kmin) / cap;
+    const band =
+      frac >= 0.15 && frac <= 0.9
+        ? 1
+        : Math.max(0, 1 - Math.min(Math.abs(frac - 0.15), Math.abs(frac - 0.9)) * 2);
+    return { frac, range, score: 0.6 * band + 0.4 * Math.min(1, range * 2.5) };
+  }
+  function suggestionsFor(seed, g) {
+    const rand = rng(seed ^ 0x2545f491);
+    const cands = [];
+    for (let i = 0; i < 6; i++) {
+      const cg = mutateGrammar(g, rand);
+      const s = scoreGrammar(cg);
+      cands.push({ g: cg, ...s, i });
+    }
+    cands.sort((a, b) => b.score - a.score || a.i - b.i);
+    return cands.slice(0, 3);
+  }
+
+  /* ------------------------------------------------------- UI: suggestions */
+  function renderSuggestions() {
+    const seed = parseInt(seedEl.value, 10);
+    const otKey = document.getElementById('ot-map').value;
+    const g = currentGrammar || grammarFor(otKey);
+    suggestBox.replaceChildren();
+    if (!Number.isFinite(seed)) {
+      suggestBox.appendChild(capLi('enter a seed to get deterministic suggestions'));
+      return;
+    }
+    if (!g) {
+      suggestBox.appendChild(
+        capLi('current map has no operator grammar — pinning/suggesting need one'),
+      );
+      return;
+    }
+    for (const [n, cand] of suggestionsFor(seed, g).entries()) {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'text-align:center;font-size:11.5px;color:var(--muted);cursor:pointer';
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 72;
+      cv.style.cssText =
+        'width:72px;height:72px;border-radius:6px;display:block;border:1px solid #333';
+      cv.title = 'apply this mutation';
+      renderEscapeTime(cv, buildMap('sug', cand.g));
+      wrap.appendChild(cv);
+      const cap = document.createElement('div');
+      cap.textContent = `#${n + 1} score ${cand.score.toFixed(2)} · esc ${(cand.frac * 100).toFixed(0)}%`;
+      wrap.appendChild(cap);
+      const f = document.createElement('div');
+      f.textContent = describeChange(g, cand.g);
+      wrap.appendChild(f);
+      wrap.addEventListener('click', () => {
+        applyState(
+          {
+            v: 1,
+            map: { ...cand.g, name: 'pick' + (n + 1) },
+            cap: +document.getElementById('mb-cap').value,
+            rate: +document.getElementById('mb-rate').value,
+            gamma: +document.getElementById('mb-gamma').value,
+            seed,
+          },
+          `suggestion #${n + 1} applied`,
+        );
+      });
+      suggestBox.appendChild(wrap);
+    }
+  }
+  function capLi(text) {
+    const d = document.createElement('div');
+    d.style.cssText = 'font-size:13px;color:var(--muted)';
+    d.textContent = text;
+    return d;
+  }
+
+  /* -------------------------------------------------------------- UI: pins */
+  function readPins() {
+    let raw = null;
+    try {
+      raw = localStorage.getItem(PINS_KEY);
+    } catch {
+      return { ok: false, pins: [], msg: 'localStorage unavailable in this embedder' };
+    }
+    let arr = [];
+    try {
+      arr = raw ? JSON.parse(raw) : [];
+    } catch {
+      arr = [];
+    }
+    return { ok: true, pins: Array.isArray(arr) ? arr : [] };
+  }
+  function writePins(pins) {
+    try {
+      localStorage.setItem(PINS_KEY, JSON.stringify(pins));
+      return true;
+    } catch {
+      hudMsg('could not write pins to localStorage (private mode?)', true);
+      return false;
+    }
+  }
+  function pinLabel(st) {
+    if (!st || !st.map) return '?';
+    return typeof st.map === 'object'
+      ? `${st.map.family}:${st.map.real}/${st.map.imag} p${st.map.power}`
+      : String(st.map);
+  }
+  function renderPins() {
+    const r = readPins();
+    pinsList.replaceChildren();
+    if (!r.ok) {
+      pinsList.appendChild(pinRow('pins unavailable: ' + r.msg, null, null));
+      return;
+    }
+    if (!r.pins.length) {
+      pinsList.appendChild(
+        pinRow('nothing pinned yet — Pin adds the current experiment', null, null),
+      );
+      return;
+    }
+    r.pins.forEach((pin, idx) => {
+      const label =
+        pin && typeof pin.name === 'string'
+          ? pin.name
+          : pinLabel(pin && pin.state ? pin.state : {});
+      pinsList.appendChild(
+        pinRow(
+          `${label} · ${pin && pin.state ? `γ ${pin.state.gamma ?? 1} cap ${pin.state.cap ?? 120}` : '?'}`,
+          () => {
+            const v = validateState(pin.state, 'pin');
+            if (v.ok) applyState(v.st, 'pin loaded');
+            else hudMsg(v.msg, true);
+          },
+          () => {
+            const cur = readPins();
+            if (!cur.ok) return;
+            cur.pins.splice(idx, 1);
+            if (writePins(cur.pins)) {
+              renderPins();
+              hudMsg('pin removed');
+            }
+          },
+        ),
+      );
+    });
+  }
+  function pinRow(text, onLoad, onRemove) {
+    const li = document.createElement('li');
+    li.style.cssText = 'display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted)';
+    const span = document.createElement('span');
+    span.style.flex = '1';
+    span.textContent = text;
+    li.appendChild(span);
+    if (onLoad) {
+      const b = Object.assign(document.createElement('button'), {
+        className: 'btn',
+        textContent: 'load',
+      });
+      b.addEventListener('click', onLoad);
+      li.appendChild(b);
+    }
+    if (onRemove) {
+      const b = Object.assign(document.createElement('button'), {
+        className: 'btn',
+        textContent: 'remove',
+      });
+      b.addEventListener('click', onRemove);
+      li.appendChild(b);
+    }
+    return li;
+  }
+
+  /* -------------------------------------------------- save / share / import */
+  function download(filename, blob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+  function activeExpMap() {
+    const key = document.getElementById('ot-map').value;
+    return MAPS[key] || MAPS.mandel;
+  }
+  function importFile(file, where) {
+    file
+      .text()
+      .then((txt) => {
+        const r = parseExperimentText(txt, where);
+        if (!r.ok) {
+          hudMsg(r.msg, true);
+          return;
+        }
+        if (r.pins) {
+          const cur = readPins();
+          if (!cur.ok) {
+            hudMsg(cur.msg, true);
+            return;
+          }
+          let added = 0,
+            skipped = 0;
+          for (const pin of r.pins) {
+            const v = pin && pin.state ? validateState(pin.state, 'pin entry') : null;
+            if (!v || !v.ok) {
+              skipped++;
+              continue;
+            }
+            cur.pins = cur.pins.filter((p) => p.name !== pin.name);
+            cur.pins.push({
+              name: String(pin.name || pinLabel(v.st)),
+              ts: pin.ts || 0,
+              state: v.st,
+            });
+            added++;
+          }
+          if (writePins(cur.pins)) {
+            renderPins();
+            hudMsg(`pins import: ${added} loaded, ${skipped} skipped as invalid`);
+          }
+          return;
+        }
+        applyState(r.st, `${where} imported`);
+      })
+      .catch((err) => hudMsg(`${where}: could not read file (${esc(err.message)})`, true));
+  }
+
+  /* ------------------------------------------------------------- wire up */
+  document.getElementById('exp-surprise').addEventListener('click', () => {
+    let seed = parseInt(seedEl.value, 10);
+    if (!Number.isFinite(seed) || seed < 0) {
+      seed = Date.now() & 0x7fffffff || 1;
+      seedEl.value = String(seed);
+    }
+    const { g, attempt, frac } = surpriseFrom(seed);
+    applyState(
+      {
+        v: 1,
+        map: { ...g, name: 's' + seed },
+        cap: +document.getElementById('mb-cap').value,
+        rate: +document.getElementById('mb-rate').value,
+        gamma: +document.getElementById('mb-gamma').value,
+        seed,
+      },
+      'surprise',
+    );
+    hud.innerHTML =
+      `<b>surprise</b> · seed <b>${seed}</b> (attempt ${attempt}` +
+      (frac !== null
+        ? `, escape fraction ${frac.toFixed(2)} in band`
+        : ', fallback after 24 tries') +
+      ') — same seed reproduces this map';
+  });
+  document.getElementById('exp-mutate').addEventListener('click', () => {
+    const otKey = document.getElementById('ot-map').value;
+    const base = currentGrammar || grammarFor(otKey);
+    if (!base) {
+      hudMsg(
+        'the current map (' +
+          esc(otKey) +
+          ') has no operator grammar — surprise/suggestion maps and grammar-backed stock maps can be mutated',
+        true,
+      );
+      return;
+    }
+    const seed = parseInt(seedEl.value, 10) || 0;
+    const rand = rng((seed ^ 0x5f356495) + 7919 * ++mutateN);
+    const g2 = mutateGrammar(base, rand);
+    const key = 'exp_mut' + mutateN;
+    const m = buildMap('mut' + mutateN, g2);
+    m.grammar = { ...g2 };
+    registerMap(key, m);
+    syncBuildSelects(g2); // left canvas of the build pair shows the mutation
+    const buBase = document.getElementById('bu-base'); // right canvas: the base map
+    renderEscapeTime(buBase, MAPS[otKey] || buildMap('base', base));
+    currentGrammar = { ...g2 };
+    writeHash();
+    renderSuggestions();
+    hud.innerHTML =
+      `<b>mutation ${mutateN}</b> · ${esc(describeChange(base, g2))} — side-by-side in the build panel ` +
+      '(left: mutated, right: base); theater/developing room unchanged — register or pin to keep';
+  });
+  document.getElementById('exp-resuggest').addEventListener('click', renderSuggestions);
+  document.getElementById('exp-pin').addEventListener('click', () => {
+    const r = readPins();
+    if (!r.ok) {
+      hudMsg(r.msg, true);
+      return;
+    }
+    const st = compact(currentState());
+    const name =
+      (typeof st.map === 'object' ? `${st.map.family}:${st.map.real}/${st.map.imag}` : st.map) +
+      ` #${st.seed ?? 'ns'}`;
+    r.pins.push({ name, ts: Date.now(), state: st });
+    if (writePins(r.pins)) {
+      renderPins();
+      hudMsg(`pinned “${esc(name)}” (${r.pins.length} total)`);
+    }
+  });
+  document.getElementById('exp-share').addEventListener('click', () => {
+    writeHash();
+    const url = location.href;
+    const ok = () =>
+      hudMsg(`share link copied (${url.length} chars) — the URL hash now carries this experiment`);
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      let done = false;
+      try {
+        done = document.execCommand('copy');
+      } catch {
+        done = false;
+      }
+      ta.remove();
+      if (done) ok();
+      else
+        hudMsg(
+          'clipboard blocked — the share link is the URL above (copy it from the address bar)',
+          true,
+        );
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(url).then(ok, fallback);
+    else fallback();
+  });
+  document.getElementById('exp-save-png').addEventListener('click', () => {
+    const off = document.createElement('canvas');
+    off.width = off.height = 600;
+    renderEscapeTime(off, activeExpMap());
+    off.toBlob((b) => {
+      if (b) download(`experiment-${Date.now()}.png`, b);
+    }, 'image/png');
+    hudMsg('PNG saved (600² escape-time render of the current map)');
+  });
+  document.getElementById('exp-save-json').addEventListener('click', () => {
+    download(
+      `experiment-${Date.now()}.json`,
+      new Blob([JSON.stringify(currentState(), null, 2)], { type: 'application/json' }),
+    );
+    hudMsg('experiment JSON saved — import it back via the picker or drag-drop');
+  });
+  document.getElementById('exp-import').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) importFile(f, 'experiment file');
+    e.target.value = '';
+  });
+  document.getElementById('exp-import-pins').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) importFile(f, 'pins file');
+    e.target.value = '';
+  });
+  document.getElementById('exp-export-pins').addEventListener('click', () => {
+    const r = readPins();
+    if (!r.ok) {
+      hudMsg(r.msg, true);
+      return;
+    }
+    download(
+      'fd-pins.json',
+      new Blob([JSON.stringify(r.pins, null, 2)], { type: 'application/json' }),
+    );
+    hudMsg(`${r.pins.length} pins exported`);
+  });
+  // drag-drop import: an experiment JSON or a pins export, both accepted
+  panel.addEventListener('dragover', (e) => e.preventDefault());
+  panel.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) importFile(f, 'dropped file');
+  });
+  seedEl.addEventListener('input', renderSuggestions);
+
+  /* ------------------------------------------------------- boot: restore */
+  renderPins();
+  const h = location.hash;
+  if (h.startsWith('#exp=')) {
+    let txt = '';
+    try {
+      txt = decodeURIComponent(h.slice(5));
+    } catch {
+      hudMsg('link restore: the #exp= hash is not validly encoded — starting fresh', true);
+    }
+    if (txt) {
+      const r = parseExperimentText(txt, 'link restore');
+      if (r.ok && !r.pins) applyState(r.st, 'restored experiment from link');
+      else if (r.ok)
+        hudMsg(
+          'link restore: the hash holds a pins list, not one experiment — use import for that',
+          true,
+        );
+      else hudMsg(r.msg, true);
+    }
+  } else {
+    renderSuggestions();
+    hudMsg('experiments ready — surprise · mutate · pin · share');
+  }
 })();
