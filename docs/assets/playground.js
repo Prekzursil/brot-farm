@@ -740,15 +740,23 @@ function currentMap(sel) {
 // the behavior parity).
 const BUILD = {
   real: {
-    cos: (x) => M.cos(x * x), sin: (x) => M.sin(x * x), tan: (x) => M.tan(x * x),
-    sinh: (x) => M.sinh(x * x), exp: (x) => M.exp(x * x), abs: (x) => M.abs(x * x),
+    cos: (x) => M.cos(x * x),
+    sin: (x) => M.sin(x * x),
+    tan: (x) => M.tan(x * x),
+    sinh: (x) => M.sinh(x * x),
+    exp: (x) => M.exp(x * x),
+    abs: (x) => M.abs(x * x),
   },
   imag: {
-    plain: (t) => t, cos: (t) => M.cos(t), abs: (t) => M.abs(t),
-    neg: (t) => -t, absxy: (t) => M.abs(t),
+    plain: (t) => t,
+    cos: (t) => M.cos(t),
+    abs: (t) => M.abs(t),
+    neg: (t) => -t,
+    absxy: (t) => M.abs(t),
   },
   powerReal: {
-    2: (x, y) => x * x - y * y, 3: (x, y) => x ** 3 - 3 * x * y * y,
+    2: (x, y) => x * x - y * y,
+    3: (x, y) => x ** 3 - 3 * x * y * y,
     4: (x, y) => x ** 4 - 6 * x * x * y * y + y ** 4,
     5: (x, y) => x ** 5 - 10 * x ** 3 * y * y + 5 * x * y ** 4,
   },
@@ -758,7 +766,8 @@ function buildMap(name, grammar) {
   const g = grammar;
   let step;
   if (g.family === 'mutation') {
-    const f = BUILD.real[g.real], h = BUILD.imag[g.imag];
+    const f = BUILD.real[g.real],
+      h = BUILD.imag[g.imag];
     step = (x, y, cx, cy) => [f(x) - y + cx, h(2.0 * x * y) + cy];
   } else if (g.family === 'fold') {
     const h = BUILD.imag[g.imag];
@@ -792,33 +801,46 @@ function buildMap(name, grammar) {
 (function buildSuiteUI() {
   const panel = document.getElementById('build-panel');
   if (!panel) return;
-  const selR = document.getElementById('bu-real'), selI = document.getElementById('bu-imag');
-  for (const [sel, table] of [[selR, BUILD.real], [selI, BUILD.imag]])
-    for (const k of Object.keys(table)) sel.appendChild(Object.assign(document.createElement('option'), { value: k, textContent: k }));
-  const selF = document.getElementById('bu-family'), selP = document.getElementById('bu-power');
+  const selR = document.getElementById('bu-real'),
+    selI = document.getElementById('bu-imag');
+  for (const [sel, table] of [
+    [selR, BUILD.real],
+    [selI, BUILD.imag],
+  ])
+    for (const k of Object.keys(table))
+      sel.appendChild(
+        Object.assign(document.createElement('option'), { value: k, textContent: k }),
+      );
+  const selF = document.getElementById('bu-family'),
+    selP = document.getElementById('bu-power');
   const nameEl = document.getElementById('bu-name');
-  const cv = document.getElementById('bu-canvas'), ctx = cv.getContext('2d');
+  const cv = document.getElementById('bu-canvas'),
+    ctx = cv.getContext('2d');
   const hud = document.getElementById('bu-hud');
   let current = null;
 
   function grammar() {
     return {
       family: selF.value,
-      real: selR.value, imag: selI.value,
+      real: selR.value,
+      imag: selI.value,
       power: +selP.value,
     };
   }
   function redraw() {
     current = buildMap((nameEl.value || 'custom').replace(/[^a-z0-9_]/gi, ''), grammar());
     // quick escape-time preview (not orbit density: instant feedback)
-    const N = cv.width, img = ctx.createImageData(N, N);
-    const w = current.win, half = (w[1] - w[0]) / 2;
+    const N = cv.width,
+      img = ctx.createImageData(N, N);
+    const w = current.win;
     let k = 0;
     for (let py = 0; py < N; py++) {
       for (let px = 0; px < N; px++, k += 4) {
         const cx = w[0] + (px / N) * (w[1] - w[0]);
         const cy = w[3] - (py / N) * (w[3] - w[2]);
-        let x = cx, y = cy, n = 0;
+        let x = cx,
+          y = cy,
+          n = 0;
         for (; n < 80; n++) {
           [x, y] = current.step(x, y, cx, cy);
           if (!isFinite(x) || !isFinite(y) || current.gone(x, y)) break;
@@ -844,23 +866,32 @@ function buildMap(name, grammar) {
     opt.textContent = current.label;
     document.getElementById('ot-map').appendChild(opt);
     document.getElementById('ot-map').value = key;
-    document.getElementById('mb-map').appendChild(Object.assign(document.createElement('option'), { value: key, textContent: current.label }));
+    document
+      .getElementById('mb-map')
+      .appendChild(
+        Object.assign(document.createElement('option'), { value: key, textContent: current.label }),
+      );
     hud.textContent = 'registered as ' + key + ' — live in Orbit theater + Developing room';
   });
   document.getElementById('bu-compare').addEventListener('click', () => {
     if (!current) redraw();
-    const a = document.getElementById('bu-canvas'), b = document.getElementById('bu-base');
-    b.width = a.width; b.height = a.height;
+    const a = document.getElementById('bu-canvas'),
+      b = document.getElementById('bu-base');
+    b.width = a.width;
+    b.height = a.height;
     const bctx = b.getContext('2d');
     const base = currentMap(document.getElementById('ot-map'));
-    const N = a.width, img = bctx.createImageData(N, N);
+    const N = a.width,
+      img = bctx.createImageData(N, N);
     const w = current.win;
     let k = 0;
     for (let py = 0; py < N; py++) {
       for (let px = 0; px < N; px++, k += 4) {
         const cx = w[0] + (px / N) * (w[1] - w[0]);
         const cy = w[3] - (py / N) * (w[3] - w[2]);
-        let x = cx, y = cy, n = 0;
+        let x = cx,
+          y = cy,
+          n = 0;
         for (; n < 80; n++) {
           [x, y] = base.step(x, y, cx, cy);
           if (!isFinite(x) || !isFinite(y) || base.gone(x, y)) break;
@@ -883,7 +914,8 @@ function buildMap(name, grammar) {
       const key = 'cat_' + e.name;
       MAPS[key] = buildMap(e.name, e.grammar);
       const li = document.createElement('li');
-      li.style.cssText = 'display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted)';
+      li.style.cssText =
+        'display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted)';
       if (e.hasPreview) {
         const img = document.createElement('img');
         img.src = e.preview;
@@ -898,7 +930,10 @@ function buildMap(name, grammar) {
       btn.textContent = 'load';
       btn.onclick = () => {
         const sel = document.getElementById('ot-map');
-        if (![...sel.options].some((o) => o.value === key)) sel.appendChild(Object.assign(document.createElement('option'), { value: key, textContent: e.name }));
+        if (![...sel.options].some((o) => o.value === key))
+          sel.appendChild(
+            Object.assign(document.createElement('option'), { value: key, textContent: e.name }),
+          );
         sel.value = key;
         hud.textContent = e.name + ' loaded into the orbit theater';
       };
