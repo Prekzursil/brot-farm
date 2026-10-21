@@ -40,8 +40,11 @@ jobs:
 
       - name: Find the .aprs.json attachment
         id: find
+        env:
+          # env-passed, never interpolated into the shell (code-injection safety)
+          REPO_SLUG: ${{ github.repository }}
         run: |
-          body="$(gh api "repos/${{ github.repository }}/issues/$ISSUE" -q .body)"
+          body="$(gh api "repos/$REPO_SLUG/issues/$ISSUE" -q .body)"
           url="$(printf '%s' "$body" | grep -oE 'https://[^[:space:]())"<>]+[.]aprs[.]json' | head -1 || true)"
           if [ -z "$url" ]; then
             printf '%s\n' \
@@ -56,8 +59,11 @@ jobs:
 
       - name: Download, validate, dedupe
         id: gate
+        env:
+          # externally-influenced value: pass via env, never interpolate into run:
+          ATTACHMENT_URL: ${{ steps.find.outputs.url }}
         run: |
-          curl -fsSL -o submit.aprs.json "${{ steps.find.outputs.url }}"
+          curl -fsSL -o submit.aprs.json "$ATTACHMENT_URL"
           set +e
           python scripts/validate_aprs.py submit.aprs.json > reasons.txt 2>&1
           rc=$?
