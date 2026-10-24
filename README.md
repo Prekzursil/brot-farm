@@ -85,16 +85,23 @@ percentile tone anchors, benchmarks, and the alternatives not taken — lives in
 ## Tests & CI
 
 ```bash
-python -m pytest --cov       # 63 tests at 100% line+branch coverage (enforced by CI):
-                             # step rules vs complex arithmetic, escape classification
+python -m pytest --cov       # the whole suite at 100% line+branch coverage (enforced by
+                             # CI): step rules vs complex arithmetic, escape classification
                              # vs scalar reference, tone monotonicity, histogram bounds,
                              # culling soundness, seed determinism, mirror-symmetry law,
-                             # CLI entry points, caching paths, the topup tool, and a
-                             # tiny end-to-end render
+                             # CLI entry points, caching paths, the topup tool, the
+                             # S0/S1/S2 samplers, the build suite and its Python<->JavaScript
+                             # map parity, the collection index and APRS validator, the
+                             # paper-figure pipeline, and a tiny end-to-end render
+bash scripts/preflight.sh    # the lint, type, coverage and research-gate lanes, locally
 ```
 
-CI runs the suite on Python 3.11–3.13 (`.github/workflows/ci.yml`); Pages deploys `docs/`
-on every push to `main` (`.github/workflows/pages.yml`).
+CI (`.github/workflows/ci.yml`) runs the suite on Python 3.11–3.14 on Ubuntu and Windows,
+plus the Playwright site suite and the research lab-notebook gate; `ci-green` aggregates
+them. `.github/workflows/quality.yml` runs the lean quality gate (lint/format, types,
+coverage, SAST, secrets, dependencies) and CodeQL scans pushes and pull requests;
+`ci-green`, `quality` and CodeQL are required to merge into `main`. Pages deploys `docs/`
+on every push to `main` that touches `docs/` (`.github/workflows/pages.yml`).
 
 ## License
 

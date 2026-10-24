@@ -11,7 +11,10 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # superseded PR runs are cancelled; runs on main always finish (with the
+  # fail-closed ci-green below, a cancelled main run would otherwise leave a
+  # red mark on a commit that was never actually tested)
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   site:
@@ -52,7 +55,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: .coverage*
+          path: .coverage
+          # .coverage is a dotfile, which upload-artifact@v4 skips by default
+          include-hidden-files: true
           retention-days: 7
       - name: CLI smoke
         run: |
@@ -73,9 +78,21 @@ jobs:
 
   ci-green:
     # aggregate gate for branch protection: one stable context name that
-    # requires every matrix cell above to have passed
+    # requires every matrix cell above to have passed. Fail-closed: without
+    # `if: always()` a failed or cancelled job above leaves ci-green *skipped*,
+    # and a skipped required check counts as passing.
     needs: [site, test, research]
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - run: echo "all CI jobs green"
+      - name: Require every CI job to have succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "needs results: $RESULTS"
+          [ -n "$RESULTS" ] || { echo "no job results to aggregate"; exit 1; }
+          for result in $RESULTS; do
+            [ "$result" = success ] || { echo "a required CI job did not succeed"; exit 1; }
+          done
+          echo "all CI jobs green"

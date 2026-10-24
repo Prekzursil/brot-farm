@@ -324,8 +324,7 @@ def _im(ax: Axes, h: np.ndarray, lo: float, hi: float) -> None:
 
 
 def _dev_im(ax: Axes, d: np.ndarray) -> None:
-    cm = plt.get_cmap(DIV_CMAP).copy()
-    cm.set_bad("0.88")
+    cm = plt.get_cmap(DIV_CMAP).with_extremes(bad="0.88")
     m = np.ma.masked_invalid(np.clip(d, -1.0, 1.0))
     ax.imshow(m, cmap=cm, vmin=-1.0, vmax=1.0, origin="upper")
     ax.set_xticks([])

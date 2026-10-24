@@ -17,8 +17,10 @@ never a public issue (see [SECURITY.md](SECURITY.md)).
 For all code paths, one rule is absolute: **every gate must pass for the right
 reason.** Never weaken a gate to pass it. Run
 [`bash scripts/preflight.sh`](scripts/preflight.sh) before every push — it
-reproduces every CI lane locally (ruff, basedpyright, oxlint, biome, and
-pytest at 100 % line **and** branch coverage).
+reproduces the CI lint, type, coverage and research lanes locally (ruff,
+basedpyright, oxlint, biome, pytest at 100 % line **and** branch coverage,
+and the research lab-notebook gate); the Playwright site suite is in the
+pull-request checklist below.
 
 ---
 
@@ -141,8 +143,8 @@ local checks can never drift from CI.
 
 See [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) —
 it is the same list CI enforces: preflight lanes green, 100 % line+branch
-coverage, the Playwright site suite, asset versioning stamps, and the
-map-parity tests.
+coverage, the Playwright site suite, the research lab-notebook gate, asset
+versioning stamps, and the map-parity tests.
 
 ## Conduct
 
