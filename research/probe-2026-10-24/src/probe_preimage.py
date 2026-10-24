@@ -143,8 +143,8 @@ def sample_preimage(
             w = roots3[br] * np.exp(np.log(w - c) / 3.0)
         branch_counts += np.bincount(br, minlength=power)
         n_nan += int((~np.isfinite(w)).sum())
-        col = ((w.real - px0) * sx).astype(np.int64)
-        row = ((w.imag - py0) * sy).astype(np.int64)
+        col = ((np.real(w) - px0) * sx).astype(np.int64)
+        row = ((np.imag(w) - py0) * sy).astype(np.int64)
         inb = (col >= 0) & (col < W) & (row >= 0) & (row < H)
         if si >= burn:
             n_in_post += int(inb.sum())

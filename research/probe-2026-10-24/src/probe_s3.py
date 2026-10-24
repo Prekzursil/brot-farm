@@ -766,7 +766,7 @@ def _fit(runs: list, map_name: str, estimator: str, variant: str) -> dict:
     for r in sel:
         by_n.setdefault(r["budget"], []).append(r)
     rungs = sorted(by_n)
-    out = {"by_rung": []}
+    out: dict = {"by_rung": []}  # mixed value types (lists + floats)
     for n in rungs:
         rr = by_n[n]
         out["by_rung"].append(
