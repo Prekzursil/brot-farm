@@ -180,4 +180,4 @@ audited 1500 channel and beyond, over a 3.75x-deeper horizon span.
 - `receipts/2026-10-24-probe-horizon-gate.md` — this receipt.
 
 ---
-**2026-10-24 closeout annotation:** lint-only edit to `experiments/src/probe_horizon_gate.py` (E402 noqa markers on the post-bootstrap imports; removal of one unused import / one unused variable). No numeric, protocol, or behavioral change; all measured values in this receipt are untouched. Repo copy under research/probe-2026-10-24/ re-synced and hash-verified.
+**2026-10-24 closeout annotation:** lint-only/ruff-format edit to `experiments/src/probe_horizon_gate.py` (E402 noqa markers on the post-bootstrap imports; removal of one unused import / one unused variable). No numeric, protocol, or behavioral change; all measured values in this receipt are untouched. Repo copy under research/probe-2026-10-24/ re-synced and hash-verified.

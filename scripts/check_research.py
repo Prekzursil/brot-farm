@@ -31,7 +31,11 @@ def fail(msg):
 def check_receipts(probe_dir, name):
     ok = True
     rdir = os.path.join(probe_dir, "receipts")
-    receipts = sorted(f for f in os.listdir(rdir) if f.endswith(".md")) if os.path.isdir(rdir) else []
+    receipts = (
+        sorted(f for f in os.listdir(rdir) if f.endswith(".md"))
+        if os.path.isdir(rdir)
+        else []
+    )
     if not receipts:
         return fail(f"{name}: no receipts found (every probe ships dated receipts)")
     for r in receipts:
@@ -39,7 +43,9 @@ def check_receipts(probe_dir, name):
         with open(path, encoding="utf-8") as fh:
             head = [fh.readline() for _ in range(SENTINEL_LINES)]
         if not any(SENTINEL in line for line in head):
-            ok = fail(f"{name}/receipts/{r}: skeleton sentinel not in first {SENTINEL_LINES} lines")
+            ok = fail(
+                f"{name}/receipts/{r}: skeleton sentinel not in first {SENTINEL_LINES} lines"
+            )
     return ok
 
 
@@ -47,7 +53,9 @@ def check_results(probe_dir, name):
     ok = True
     jdir = os.path.join(probe_dir, "results")
     if not os.path.isdir(jdir):
-        return fail(f"{name}: no results/ directory (every probe ships machine-readable results)")
+        return fail(
+            f"{name}: no results/ directory (every probe ships machine-readable results)"
+        )
     results = sorted(f for f in os.listdir(jdir) if f.endswith(".json"))
     if not results:
         return fail(f"{name}: no result JSON files")
@@ -84,7 +92,9 @@ def main():
     if not os.path.isdir(RESEARCH):
         print("check-research: no research/ tree present - nothing to gate")
         return 0
-    probes = sorted(d for d in os.listdir(RESEARCH) if os.path.isdir(os.path.join(RESEARCH, d)))
+    probes = sorted(
+        d for d in os.listdir(RESEARCH) if os.path.isdir(os.path.join(RESEARCH, d))
+    )
     if not probes:
         print("check-research: research/ tree is empty - nothing to gate")
         return 0

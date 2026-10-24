@@ -264,4 +264,4 @@ dust of zero area plus transient resonance).
   the bridge, and 80 -> 1500 moved it by 0.0001 (measured, julia_connected: 1.8953 vs 1.8952).
 
 ---
-**2026-10-24 closeout annotation:** lint-only edit to `experiments/src/probe_preimage.py` (E402 noqa markers on the post-bootstrap imports; removal of one unused import / one unused variable). No numeric, protocol, or behavioral change; all measured values in this receipt are untouched. Repo copy under research/probe-2026-10-24/ re-synced and hash-verified.
+**2026-10-24 closeout annotation:** lint-only/ruff-format edit to `experiments/src/probe_preimage.py` (E402 noqa markers on the post-bootstrap imports; removal of one unused import / one unused variable). No numeric, protocol, or behavioral change; all measured values in this receipt are untouched. Repo copy under research/probe-2026-10-24/ re-synced and hash-verified.
