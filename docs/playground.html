@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-build="8d68b666" lang="en">
+<html data-build="8fb6a3bd" lang="en">
 <head>
 <script>
 /* error banner: works even if every other asset fails; shown only on error */
@@ -188,9 +188,12 @@ off a <code>file://</code> copy.</p>
 
 <!-- ========================================================== SANDBOX IDEAS -->
 <h2 class="reveal">4 · Formulas worth typing</h2>
-<p class="reveal">The x′ / y′ boxes accept any JavaScript expression in <code>x</code>,
-<code>y</code>, <code>cx</code>, <code>cy</code> (Math functions available bare —
-<code>sin</code>, <code>cos</code>, <code>exp</code>, <code>abs</code>, <code>sqrt</code>…).
+<p class="reveal">The x′ / y′ boxes accept an arithmetic expression in <code>x</code>,
+<code>y</code>, <code>cx</code>, <code>cy</code>: numbers, <code>+ - * / % **</code>
+(powers are <code>x**2</code>), parentheses, and the Math functions and constants, bare or
+<code>Math.</code>-prefixed (<code>sin</code>, <code>cos</code>, <code>exp</code>,
+<code>abs</code>, <code>sqrt</code>, <code>hypot</code>, <code>PI</code>…). Formulas are
+parsed, never run as code, so a shared link cannot smuggle in a script.
 A few with known-good results:</p>
 <table class="reveal">
   <tr><th>Idea</th><th>x′</th><th>y′</th><th>What happens</th></tr>
@@ -209,6 +212,6 @@ A few with known-good results:</p>
 </footer>
 <script src="assets/app.js?v=81e01ed8"></script>
 <script src="assets/catalogue.js?v=756d7c3d"></script>
-<script src="assets/playground.js?v=2bb75e50"></script>
+<script src="assets/playground.js?v=44bcb1f7"></script>
 </body>
 </html>

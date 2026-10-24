@@ -330,6 +330,48 @@ def check_page(pg, base: str, page_name: str, mobile: bool) -> None:
             "APRS loaded" in aprs_hud and gamma_back2 == "1.85",
             f"hud={aprs_hud[:60]!r} gamma={gamma_back2}",
         )
+        # A shared #exp= link is data, never code. A formula outside the
+        # arithmetic grammar is rejected (the old new-Function compiler ran
+        # it), and link data quoted by a validation error lands as text, not
+        # as parsed HTML. Both probes would set globalThis.fdProbe if they ran.
+        probes = [
+            (
+                "exp-formula-is-data",
+                {"v": 1, "map": "mandel", "fx": "globalThis.fdProbe = 1"},
+                "custom formula rejected",
+            ),
+            (
+                "exp-hud-is-text",
+                {"v": 1, "map": '<img src=x onerror="globalThis.fdProbe = 1">'},
+                "unknown map key",
+            ),
+        ]
+        for check, hostile, expected in probes:
+            pg.evaluate(
+                "(s) => { location.hash = '#exp=' + encodeURIComponent(JSON.stringify(s)); }",
+                hostile,
+            )
+            pg.reload(wait_until="load")
+            pg.wait_for_timeout(1200)
+            probe_hud = (pg.text_content("#exp-hud") or "").replace("\n", " ")
+            ran = pg.evaluate("() => 'fdProbe' in globalThis")
+            markup = pg.evaluate(
+                "() => document.querySelectorAll('#exp-hud img').length"
+            )
+            record(
+                lane,
+                check,
+                expected in probe_hud and not ran and markup == 0,
+                f"hud={probe_hud[:70]!r} ran={ran} img={markup}",
+            )
+        pg.evaluate("() => { location.hash = ''; }")
+        # the documented grammar still compiles: bare and Math.-prefixed names
+        pg.fill("#ot-fx", "sin(x)*cosh(y) + cx")
+        pg.fill("#ot-fy", "Math.cos(x)*sinh(y) + cy")
+        pg.click("#ot-apply")
+        pg.wait_for_timeout(350)
+        ot_hud = (pg.text_content("#ot-hud") or "").replace("\n", " ")
+        record(lane, "formula-grammar", "custom formula" in ot_hud, ot_hud[:60])
     if page_name == "contribute.html":
         # walkthrough page: every screenshot must load (scroll first — they
         # are lazy), and the nav wiring must expose Contribute
