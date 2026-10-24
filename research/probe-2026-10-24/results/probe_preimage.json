@@ -1,0 +1,538 @@
+{
+  "probe": "bridge-preimage-vs-forward",
+  "date": "2026-10-24",
+  "protocol": {
+    "grid": 512,
+    "pre_chains": 4096,
+    "pre_burn": 2000,
+    "pre_target_visits": 100000000,
+    "pre_w0": "(0.31-0.72j)",
+    "roi_rule": "analyze.roi_from_ref verbatim: top decile of positive reference-count pixels",
+    "l1": "sum_ROI |a_p/sum_ROI(a) - b_p/sum_ROI(b)|",
+    "base_seed": 20261024,
+    "note": "mandel/z3 bridges reuse the cached cap-1500 40M study references and their 4M study/control null pair; the julia bridge renders its own 40M reference + cap-80 trend run through the farm's own kernels."
+  },
+  "maps": [
+    {
+      "key": "julia_connected_c-1",
+      "errors": [],
+      "step_rule": "brot_farm.s_std (z^2+c), escape g_z |z|^2>4",
+      "critical_orbit": {
+        "bounded": true,
+        "max_mod": 1.0,
+        "cap": 200000
+      },
+      "connected_J": true,
+      "forward": {
+        "source": "rendered fresh (farm kernels, julia branch)",
+        "cap": 1500,
+        "budget": 40000000,
+        "seed": 20261101,
+        "n_escaped": 35634753,
+        "points": 36430829.0,
+        "sec": 211.02999567985535,
+        "escape_fraction": 0.890868825
+      },
+      "roi": {
+        "n_positive_pixels": 235138,
+        "decile_k": 23514,
+        "threshold_count": 315.0,
+        "roi_pixels": 23562,
+        "roi_mass_fraction": 0.338593640018458,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "forward_cap80": {
+        "cap": 80,
+        "budget": 4000000,
+        "seed": 20261102,
+        "n_escaped": 3563446,
+        "points": 3643125.0,
+        "sec": 8.7492835521698,
+        "escape_fraction": 0.8908615
+      },
+      "preimage": {
+        "seed": 20261024,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 24415,
+        "visits": 100003840,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 1.0,
+        "nan_visits": 0,
+        "branch_counts": [
+          54101142,
+          54094698
+        ],
+        "branch_frequencies": [
+          0.5000297793334753,
+          0.4999702206665247
+        ],
+        "sec": 137.5984079837799
+      },
+      "preimage_replica": {
+        "seed": 20261025,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 12208,
+        "visits": 50003968,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 1.0,
+        "nan_visits": 0,
+        "branch_counts": [
+          29093394,
+          29102574
+        ],
+        "branch_frequencies": [
+          0.49992112855653503,
+          0.500078871443465
+        ],
+        "sec": 44.929694175720215
+      },
+      "nulls": {
+        "forward_halves": 0.06859035140498428,
+        "preimage_replica": 0.006495251314502473,
+        "preimage_timesplit": 0.0076704195707471235
+      },
+      "bridge": {
+        "l1_pre_vs_ref": 1.895150260799792,
+        "l1_pre_vs_half0": 1.8954517030257874,
+        "l1_pre_vs_cap80": 1.8953451759512485,
+        "l1_cap80_vs_ref": 0.1563169450629467
+      },
+      "overlap": {
+        "ref_mass_on_pre_support": 0.06049064116835277,
+        "roi_pixels_with_pre_zero": 22388,
+        "roi_pixels": 23562,
+        "pre_roi_mass_fraction": 0.2705747299303707,
+        "reverse_roi": {
+          "n_positive_pixels": 4153,
+          "decile_k": 416,
+          "threshold_count": 59284.0,
+          "roi_pixels": 416,
+          "roi_mass_fraction": 0.6767933011372363,
+          "rule": "top decile of positive-count pixels, count >= k-th largest"
+        },
+        "reverse_l1_pre_vs_ref": 0.913122980748354,
+        "reverse_null_replica": 0.003006821414419707
+      }
+    },
+    {
+      "key": "julia_asconfigured_c-0.7+0.27i",
+      "errors": [],
+      "step_rule": "brot_farm.s_std (z^2+c), escape g_z |z|^2>4",
+      "critical_orbit": {
+        "bounded": false,
+        "max_mod": 846681.2536582055,
+        "cap": 200000
+      },
+      "connected_J": false,
+      "forward": {
+        "source": "rendered fresh (farm kernels, julia branch)",
+        "cap": 1500,
+        "budget": 40000000,
+        "seed": 20261101,
+        "n_escaped": 39994411,
+        "points": 1413597746.0,
+        "sec": 193.6190640926361,
+        "escape_fraction": 0.999860275
+      },
+      "roi": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 2425.0,
+        "roi_pixels": 26215,
+        "roi_mass_fraction": 0.9520894878393503,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "forward_cap80": {
+        "cap": 80,
+        "budget": 4000000,
+        "seed": 20261102,
+        "n_escaped": 3552357,
+        "points": 9398793.0,
+        "sec": 7.548676013946533,
+        "escape_fraction": 0.88808925
+      },
+      "preimage": {
+        "seed": 20261024,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 24415,
+        "visits": 100003840,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 1.0,
+        "nan_visits": 0,
+        "branch_counts": [
+          54101142,
+          54094698
+        ],
+        "branch_frequencies": [
+          0.5000297793334753,
+          0.4999702206665247
+        ],
+        "sec": 108.71575570106506
+      },
+      "preimage_replica": {
+        "seed": 20261025,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 12208,
+        "visits": 50003968,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 1.0,
+        "nan_visits": 0,
+        "branch_counts": [
+          29093394,
+          29102574
+        ],
+        "branch_frequencies": [
+          0.49992112855653503,
+          0.500078871443465
+        ],
+        "sec": 43.017375230789185
+      },
+      "nulls": {
+        "forward_halves": 0.005746949465011444,
+        "preimage_replica": 0.008736282092412237,
+        "preimage_timesplit": 0.009603932409690579
+      },
+      "bridge": {
+        "l1_pre_vs_ref": 1.9718145608626605,
+        "l1_pre_vs_half0": 1.9718004781999998,
+        "l1_pre_vs_cap80": 1.9216419512939087,
+        "l1_cap80_vs_ref": 1.3586753131693294
+      },
+      "overlap": {
+        "ref_mass_on_pre_support": 0.05265959800499655,
+        "roi_pixels_with_pre_zero": 24295,
+        "roi_pixels": 26215,
+        "pre_roi_mass_fraction": 0.14589725754531027,
+        "reverse_roi": {
+          "n_positive_pixels": 5650,
+          "decile_k": 565,
+          "threshold_count": 50181.0,
+          "roi_pixels": 565,
+          "roi_mass_fraction": 0.7420021671167827,
+          "rule": "top decile of positive-count pixels, count >= k-th largest"
+        },
+        "reverse_l1_pre_vs_ref": 1.1592443839950586,
+        "reverse_null_replica": 0.0038776112682265477
+      }
+    },
+    {
+      "key": "mandel_c-1",
+      "errors": [],
+      "critical_orbit": {
+        "bounded": true,
+        "max_mod": 1.0,
+        "cap": 200000
+      },
+      "step_rule": "buddhabrot z<-z^2+c, escape |z|^2>4, cardioid+bulb cull",
+      "roi": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 1240.0,
+        "roi_pixels": 26215,
+        "roi_mass_fraction": 0.3084942688568492,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "forward": {
+        "source": "cached data/ref_mandel_1500.npz (S0 @ 40M, cap 1500)",
+        "budget": 40000000,
+        "seed": 20261026,
+        "points": 135455437.0,
+        "escape_fraction": 0.869463325
+      },
+      "forward_fresh_halves": {
+        "budget": 4000000,
+        "seed": 20261103,
+        "points": 13542276.0,
+        "n_escaped": 3476969,
+        "n_culled": 476780,
+        "sec": 6.238757610321045
+      },
+      "preimage": {
+        "seed": 20261024,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 24415,
+        "visits": 100003840,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 0.8019372056113045,
+        "nan_visits": 0,
+        "branch_counts": [
+          54101142,
+          54094698
+        ],
+        "branch_frequencies": [
+          0.5000297793334753,
+          0.4999702206665247
+        ],
+        "sec": 93.73275899887085
+      },
+      "preimage_replica": {
+        "seed": 20261025,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 12208,
+        "visits": 50003968,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 0.80200277305993,
+        "nan_visits": 0,
+        "branch_counts": [
+          29093394,
+          29102574
+        ],
+        "branch_frequencies": [
+          0.49992112855653503,
+          0.500078871443465
+        ],
+        "sec": 76.8035397529602
+      },
+      "nulls": {
+        "forward_fresh_halves": 0.15395887629209642,
+        "cached_study_vs_control_4M": 0.11163660226560855,
+        "cached_study4M_vs_ref40M": 0.08189696525585863,
+        "preimage_replica": 0.007025753913645089,
+        "preimage_timesplit": 0.007871127863197646
+      },
+      "bridge": {
+        "l1_pre_vs_ref": 1.9316028975249857,
+        "l1_pre_vs_fresh_half0": 1.9331946922857357,
+        "l1_pre_vs_study4M": 1.9320394481063188
+      },
+      "overlap": {
+        "ref_mass_on_pre_support": 0.04272116555427728,
+        "roi_pixels_with_pre_zero": 25113,
+        "roi_pixels": 26215,
+        "pre_roi_mass_fraction": 0.25744198022863757,
+        "reverse_roi": {
+          "n_positive_pixels": 3848,
+          "decile_k": 385,
+          "threshold_count": 51701.0,
+          "roi_pixels": 385,
+          "roi_mass_fraction": 0.669257164874409,
+          "rule": "top decile of positive-count pixels, count >= k-th largest"
+        },
+        "reverse_l1_pre_vs_ref": 0.7183738499593719,
+        "reverse_null_replica": 0.003484012599065997
+      },
+      "forward_cached_4m_meta": {
+        "study_seed": 20261374,
+        "control_seed": 20261380
+      }
+    },
+    {
+      "key": "mandel_c-0.1",
+      "errors": [],
+      "critical_orbit": {
+        "bounded": true,
+        "max_mod": 0.1,
+        "cap": 200000
+      },
+      "step_rule": "buddhabrot z<-z^2+c, escape |z|^2>4, cardioid+bulb cull",
+      "roi": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 1240.0,
+        "roi_pixels": 26215,
+        "roi_mass_fraction": 0.3084942688568492,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "forward": {
+        "source": "cached data/ref_mandel_1500.npz (S0 @ 40M, cap 1500)",
+        "budget": 40000000,
+        "seed": 20261026,
+        "points": 135455437.0,
+        "escape_fraction": 0.869463325
+      },
+      "forward_fresh_halves": {
+        "budget": 4000000,
+        "seed": 20261103,
+        "points": 13542276.0,
+        "n_escaped": 3476969,
+        "n_culled": 476780,
+        "sec": 8.486579656600952
+      },
+      "preimage": {
+        "seed": 20261024,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 24415,
+        "visits": 100003840,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 1.0,
+        "nan_visits": 0,
+        "branch_counts": [
+          54101142,
+          54094698
+        ],
+        "branch_frequencies": [
+          0.5000297793334753,
+          0.4999702206665247
+        ],
+        "sec": 128.9770746231079
+      },
+      "preimage_replica": {
+        "seed": 20261025,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 12208,
+        "visits": 50003968,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 1.0,
+        "nan_visits": 0,
+        "branch_counts": [
+          29093394,
+          29102574
+        ],
+        "branch_frequencies": [
+          0.49992112855653503,
+          0.500078871443465
+        ],
+        "sec": 63.61041760444641
+      },
+      "nulls": {
+        "forward_fresh_halves": 0.15395887629209642,
+        "cached_study_vs_control_4M": 0.11163660226560855,
+        "cached_study4M_vs_ref40M": 0.08189696525585863,
+        "preimage_replica": 0.004368018557981209,
+        "preimage_timesplit": 0.004942096407967458
+      },
+      "bridge": {
+        "l1_pre_vs_ref": 1.99647543007521,
+        "l1_pre_vs_fresh_half0": 1.996758418867075,
+        "l1_pre_vs_study4M": 1.9964538281245674
+      },
+      "overlap": {
+        "ref_mass_on_pre_support": 0.0017622849623949674,
+        "roi_pixels_with_pre_zero": 26170,
+        "roi_pixels": 26215,
+        "pre_roi_mass_fraction": 0.04045536651392587,
+        "reverse_roi": {
+          "n_positive_pixels": 1256,
+          "decile_k": 126,
+          "threshold_count": 128312.0,
+          "roi_pixels": 126,
+          "roi_mass_fraction": 0.1817222918639924,
+          "rule": "top decile of positive-count pixels, count >= k-th largest"
+        },
+        "reverse_l1_pre_vs_ref": 0.49947900490605923,
+        "reverse_null_replica": 0.003119531135464218
+      },
+      "forward_cached_4m_meta": {
+        "study_seed": 20261374,
+        "control_seed": 20261380
+      }
+    },
+    {
+      "key": "z3_c0.25",
+      "errors": [],
+      "critical_orbit": {
+        "bounded": true,
+        "max_mod": 0.26959443640544456,
+        "cap": 200000
+      },
+      "step_rule": "brot_farm.s_z3 (z^3+c), escape g_z |z|^2>4",
+      "roi": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 729.0,
+        "roi_pixels": 26262,
+        "roi_mass_fraction": 0.2624269333388481,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "forward": {
+        "source": "cached data/ref_z3_1500.npz (S0 @ 40M, cap 1500)",
+        "budget": 40000000,
+        "seed": 20261029,
+        "points": 97483584.0,
+        "escape_fraction": 0.824441625
+      },
+      "forward_fresh_halves": {
+        "budget": 4000000,
+        "seed": 20261103,
+        "points": 13542276.0,
+        "n_escaped": 3476969,
+        "n_culled": 476780,
+        "sec": 7.54401421546936
+      },
+      "preimage": {
+        "seed": 20261024,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 24415,
+        "visits": 100003840,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 1.0,
+        "nan_visits": 0,
+        "branch_counts": [
+          36070794,
+          36061144,
+          36063902
+        ],
+        "branch_frequencies": [
+          0.33338429647572404,
+          0.3332951063552905,
+          0.33332059716898543
+        ],
+        "sec": 97.80500888824463
+      },
+      "preimage_replica": {
+        "seed": 20261025,
+        "chains": 4096,
+        "burn": 2000,
+        "steps": 12208,
+        "visits": 50003968,
+        "w0": "(0.31-0.72j)",
+        "inframe_fraction": 1.0,
+        "nan_visits": 0,
+        "branch_counts": [
+          19397267,
+          19398213,
+          19400488
+        ],
+        "branch_frequencies": [
+          0.3333094657004417,
+          0.3333257211221231,
+          0.33336481317743527
+        ],
+        "sec": 40.22926878929138
+      },
+      "nulls": {
+        "forward_fresh_halves": 0.18068556675084652,
+        "cached_study_vs_control_4M": 0.1705394045894293,
+        "cached_study4M_vs_ref40M": 0.12470204515265279,
+        "preimage_replica": 0.004909556902972989,
+        "preimage_timesplit": 0.00646319216170279
+      },
+      "bridge": {
+        "l1_pre_vs_ref": 1.9819700400184623,
+        "l1_pre_vs_fresh_half0": 1.9915891148693095,
+        "l1_pre_vs_study4M": 1.9817321588593746
+      },
+      "overlap": {
+        "ref_mass_on_pre_support": 0.009015758462544324,
+        "roi_pixels_with_pre_zero": 26019,
+        "roi_pixels": 26262,
+        "pre_roi_mass_fraction": 0.14761091174098914,
+        "reverse_roi": {
+          "n_positive_pixels": 1421,
+          "decile_k": 143,
+          "threshold_count": 134953.0,
+          "roi_pixels": 143,
+          "roi_mass_fraction": 0.22842651842169262,
+          "rule": "top decile of positive-count pixels, count >= k-th largest"
+        },
+        "reverse_l1_pre_vs_ref": 0.4273155207628846,
+        "reverse_null_replica": 0.00338292193568868
+      },
+      "forward_cached_4m_meta": {
+        "study_seed": 20261524,
+        "control_seed": 20261530
+      }
+    }
+  ],
+  "ok": true,
+  "wall_sec": 1289.2528681755066
+}

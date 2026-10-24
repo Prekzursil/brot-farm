@@ -1,0 +1,511 @@
+{
+  "lane": "lit-closure-1-theses",
+  "date": "2026-10-24",
+  "subject": "PhD-thesis modality closure: Bitterli dissertation vs inverse-Jacobian Buddhabrot identity; thesis-level forward-orbit max-entropy equidistribution; thesis-level inverse-iteration sampling bias",
+  "probes": [
+    {
+      "id": "wayback-cdx-bitterli-org",
+      "mechanism": "wayback-cdx",
+      "url": "http://web.archive.org/cdx/search/cdx?url=bitterli.org&matchType=domain",
+      "status": "ok",
+      "result": {
+        "n_snapshots_returned": 8,
+        "earliest": "20110621003630",
+        "earliest_url": "http://www.bitterli.org/"
+      }
+    },
+    {
+      "id": "wayback-cdx-bb-page",
+      "mechanism": "wayback-cdx",
+      "url": "http://web.archive.org/cdx/search/cdx?url=benedikt-bitterli.me/buddhabrot/",
+      "status": "ok",
+      "result": {
+        "earliest_snapshot": "20160519185729",
+        "recent_snapshot": "20250124121201",
+        "recent_status200": true
+      }
+    },
+    {
+      "id": "live-bb-page",
+      "mechanism": "curl-direct",
+      "url": "https://benedikt-bitterli.me/buddhabrot/",
+      "status": "ok",
+      "result": {
+        "http_title": "The Buddhabrot | Benedikt Bitterli's Portfolio",
+        "n_jacobian_sentences": 7,
+        "identity_passages": [
+          "Relation to the Jacobian Interestingly, the Buddhabrot is intimately related to the inverse Jacobian determinant of the Mandelbrot iteration, and I initially investigated this relation in search for a more efficient rendering algorithm.",
+          "A crude description of the inverse Jacobian determinant of a function is that it is a measure of how a function stretches and squeezes the space it operates on.",
+          "We can compute the inverse Jacobian determinant of these functions to figure out how they compress and stretch the complex plane.",
+          "If we do this for each iteration of the Mandelbrot and sum the inverse determinants of all of these Jacobians, we get a new function that measures how space around a point gets distorted as it is run through the Mandelbrot iteration.",
+          "The Jacobian of the Mandelbrot iteration can be derived analytically.",
+          "To arrive at an alternative rendering method, instead of counting the number of trajectories that pass through a pixel, we can instead compute the average Jacobian determinant of all trajectories passing through a pixel.",
+          "After rendering, we take the inverse of each pixel value, computing the inverse average Jacobian determinant."
+        ]
+      }
+    },
+    {
+      "id": "live-bitterli-org",
+      "mechanism": "curl-direct",
+      "url": "http://bitterli.org/",
+      "status": "ok",
+      "result": {
+        "http_status": 200,
+        "tokens_found": {
+          "Werner Bitterli": true,
+          "Oberrieden": true,
+          "bittterli.organisation": true,
+          "prozess qualit": true
+        },
+        "copyright_year": "2016",
+        "head": " prozess qualit&auml;t produktion Startseite | Impressum Angebot LEAN-Methoden prozess qualit&auml;t produktion &quot;Es muss alles einfacher sein. Wir d&uuml;rfen unsere Zeit nicht mit unn&ouml;tigen Dingen verschwenden, die f&uuml;r unsere Kunden keinen Nutzen generieren!&quot; Um im heutigen Wett"
+      }
+    },
+    {
+      "id": "live-resume",
+      "mechanism": "curl-direct",
+      "url": "https://benedikt-bitterli.me/resume.html",
+      "status": "ok",
+      "result": {
+        "phd_segment": "PhD in Computer Science Dartmouth College, NH, USA Focus: Physically Based Rendering, Light Transport Dissertation: \"Correlations and reuse for fast and accurate physically based light transport\" Feb 2014 - Sept 2015 Master of Science in Computer Science Swiss Federal Institute of Technology (ETH), Zurich Graduation Wi",
+        "dissertation_named": true
+      }
+    },
+    {
+      "id": "dartmouth-record",
+      "mechanism": "curl-direct",
+      "url": "https://digitalcommons.dartmouth.edu/dissertations/77/",
+      "status": "ok",
+      "result": {
+        "is_phd": true,
+        "advisor": true,
+        "award_2022": true,
+        "abstract_anchor": true,
+        "abstract_head": "Abstract Light transport is the study of the transfer of light between emitters, surfaces, media and sensors. Fast simulations of light transport play a pivotal role in photo-realistic image synthesis, and find many applications today, including predictive manufacturing, machine learning, scientific visualization and the movie industry. In order to accurately reproduce the appearance of real scenes, light transport must closely approximate the physical laws governing the flow of light. Physically based rendering is a set of principles for codifying these laws into a mathematical model, and is the predominant rendering methodology today. The representational power of this model is limited to "
+      }
+    },
+    {
+      "id": "dartmouth-fulltext",
+      "mechanism": "jina-reader",
+      "url": "https://digitalcommons.dartmouth.edu/cgi/viewcontent.cgi?article=1080&context=dissertations",
+      "status": "ok",
+      "result": {
+        "attempts": [
+          241,
+          241
+        ],
+        "chars": 491764,
+        "source": "same-session jina fetch saved to temp (integrity-checked), recomputed locally",
+        "degraded": false,
+        "term_counts": {
+          "Buddhabrot": 0,
+          "Mandelbrot": 2,
+          "fractal": 29,
+          "Jacobian": 49,
+          "Julia": 0,
+          "escape-time": 0,
+          "orbit": 0
+        }
+      }
+    },
+    {
+      "id": "arxiv-buddhabrot-count",
+      "mechanism": "curl-arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=all:buddhabrot",
+      "status": "ok",
+      "result": {
+        "totalResults": 0
+      }
+    },
+    {
+      "id": "ethos-landing",
+      "mechanism": "curl-direct",
+      "url": "https://ethos.bl.uk/",
+      "status": "ok",
+      "result": {
+        "service_notice": true,
+        "collection_size_claim": true,
+        "head": " Hyku Hyku British Library Website Home About FAQs Contact --> Share Your Work Terms of Use --> Search EThOS (E-Theses Online Service) Search the metadata of over 650,000 UK doctoral theses. Search bar --> Advanced search Introducing EThOS We are pleased to sh"
+      }
+    },
+    {
+      "id": "ethos-buddhabrot",
+      "mechanism": "firecrawl-scrape",
+      "url": "https://ethos.bl.uk/catalog?q=buddhabrot",
+      "status": "ok",
+      "result": {
+        "firecrawl_success": true,
+        "no_entries": true,
+        "head": "# Search Jump to \"Limit your search\" ## Search Constraints [Clear Filters](https://ethos.bl.uk/catalog?locale=en) Filtering by:All Fieldsbuddhabrot[\\\\ Remove constraint All Fields: buddhabrot](https://ethos.bl.uk/catalog?locale=en&search_field=all_fields) No entries found ## Search Results ## No results found for your search ### Try modifying your search - Use fewer keywords to start, then refine your search using the links on the left. - you searched by All Fields - [try searching everything](h"
+      }
+    },
+    {
+      "id": "ethos-miim-phrase",
+      "mechanism": "firecrawl-scrape",
+      "url": "https://ethos.bl.uk/catalog?q=%22modified+inverse+iteration%22",
+      "status": "ok",
+      "result": {
+        "firecrawl_success": true,
+        "no_entries": true,
+        "head": "# Search Jump to \"Limit your search\" ## Search Constraints [Clear Filters](https://ethos.bl.uk/catalog?locale=en) Filtering by:All Fields\"modified inverse iteration\"[\\\\ Remove constraint All Fields: \"modified inverse iteration\"](https://ethos.bl.uk/catalog?locale=en&search_field=all_fields) No entries found ## Search Results ## No results found for your search ### Try modifying your search - Use fewer keywords to start, then refine your search using the links on the left. - you searched by All F"
+      }
+    },
+    {
+      "id": "thesesfr-julia",
+      "mechanism": "thesesfr-api",
+      "url": "https://theses.fr/api/v1/theses/recherche/?q=%22ensemble+de+Julia%22",
+      "status": "ok",
+      "result": {
+        "totalHits": 37,
+        "top": [
+          {
+            "nnt": "2016TOU30099",
+            "titre": "Motions of Julia sets and dynamical stability in several complex variables",
+            "auteur": "Bianchi",
+            "etab": "Toulouse 3",
+            "dir": "Abate"
+          },
+          {
+            "nnt": "1997DIJOS020",
+            "titre": "M\u00e9thodes KAM en m\u00e9canique quantique et classique",
+            "auteur": "Govin",
+            "etab": "Dijon",
+            "dir": "Jauslin"
+          },
+          {
+            "nnt": "1997ENSL0065",
+            "titre": "Topologie locale des methodes de newton cubiques",
+            "auteur": "Roesch",
+            "etab": "\u00c9cole normale sup\u00e9rieure de Lyon (Lyon ; 1987-2009)",
+            "dir": "Tan"
+          },
+          {
+            "nnt": "2023URENS018",
+            "titre": "Propri\u00e9t\u00e9s g\u00e9om\u00e9triques et ergodiques des endomorphismes semi-extr\u00e9maux de CP(2)",
+            "auteur": "Tapiero",
+            "etab": "Universit\u00e9 de Rennes (2023-....)",
+            "dir": "Dupont"
+          },
+          {
+            "nnt": "2011ANGE0067",
+            "titre": "Dynamics of McMullen maps and Thurston-type theorems for rational maps with rotation domains",
+            "auteur": "Wang",
+            "etab": "Angers",
+            "dir": "Tan"
+          }
+        ]
+      }
+    },
+    {
+      "id": "thesesfr-entropie",
+      "mechanism": "thesesfr-api",
+      "url": "https://theses.fr/api/v1/theses/recherche/?q=Julia+entropie",
+      "status": "ok",
+      "result": {
+        "phrase_max_entropie": {
+          "totalHits": 0,
+          "top": []
+        },
+        "julia_entropie": {
+          "totalHits": 11,
+          "top": [
+            {
+              "nnt": "2015ANGE0054",
+              "titre": "Rigidit\u00e9 quasi-sym\u00e9trique, tapis de Julia et le d\u00e9barquement de dynamique resp. param\u00e8tres rayons",
+              "auteur": "Zeng",
+              "etab": "Angers",
+              "dir": "Tan"
+            },
+            {
+              "nnt": "2013ANGE0008",
+              "titre": "Dynatomic curve and core entropy for iteration of polynomials",
+              "auteur": "Gao",
+              "etab": "Angers",
+              "dir": "Tan"
+            },
+            {
+              "nnt": "2023URENS018",
+              "titre": "Propri\u00e9t\u00e9s g\u00e9om\u00e9triques et ergodiques des endomorphismes semi-extr\u00e9maux de CP(2)",
+              "auteur": "Tapiero",
+              "etab": "Universit\u00e9 de Rennes (2023-....)",
+              "dir": "Dupont"
+            },
+            {
+              "nnt": "2008AMIE0101",
+              "titre": "\u00c9tude sur la r\u00e9currence de certains syst\u00e8mes dynamiques topologiques et arithm\u00e9tiques",
+              "auteur": "Liao",
+              "etab": "Amiens",
+              "dir": "Fan"
+            },
+            {
+              "nnt": "2020SORUS334",
+              "titre": "Fatou-Julia dichotomy and non-uniform hyperbolicity for holomorphic endomorphisms on P2(C)",
+              "auteur": "Ji",
+              "etab": "Sorbonne universit\u00e9",
+              "dir": "Dujardin"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "thesesfr-inverse-iteration",
+      "mechanism": "thesesfr-api",
+      "url": "https://theses.fr/api/v1/theses/recherche/?q=%22it%C3%A9ration+inverse%22",
+      "status": "ok",
+      "result": {
+        "totalHits": 6,
+        "top": [
+          {
+            "nnt": "1996STET4001",
+            "titre": "Contributions au calcul num\u00e9rique des valeurs propres des matrices normales",
+            "auteur": "Ziad",
+            "etab": "Saint-Etienne",
+            "dir": "Largillier"
+          },
+          {
+            "nnt": "2000ROUES032",
+            "titre": "Approche des matrices de rigidit\u00e9 dynamique exactes pour l'analyse des structures",
+            "auteur": "Gouttel Badraoui",
+            "etab": "Rouen",
+            "dir": "Dhatt"
+          },
+          {
+            "nnt": "1991BESA2008",
+            "titre": "Contribution \u00e0 l'\u00e9tude des vibrations \u00e0 \u00e9nergie pi\u00e9g\u00e9e des r\u00e9sonateurs pi\u00e9zo\u00e9lectriques \u00e0 ondes de volume : Comportement thermique statique et modes de vibration",
+            "auteur": "Dulmet",
+            "etab": "Besan\u00e7on",
+            "dir": "Besson"
+          },
+          {
+            "nnt": "1989CLF21173",
+            "titre": "Methodes duales pour problemes d'optimisation avec variables entieres",
+            "auteur": "Michelon",
+            "etab": "Clermont-Ferrand 2",
+            "dir": "Crouzeix"
+          },
+          {
+            "nnt": "2021UPSLM069",
+            "titre": "Multi-parameter seismic linear waveform imaging",
+            "auteur": "Farshad",
+            "etab": "Universit\u00e9 Paris sciences et lettres",
+            "dir": "Chauris"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dart-europe",
+      "mechanism": "jina-reader",
+      "url": "https://dart-europe.org/en/s?q=Julia",
+      "status": "ok",
+      "result": {
+        "portal_closed": true,
+        "head": "Title: The DART-Europe e-theses portal has closed down\n\nURL Source: https://dart-europe.org/en/s?q=Julia\n\nPublished Time: Sat, 24 Oct 2026 00:33:42 GMT\n\nMarkdown Content:\n[Skip to main content](https://dart-europe.org/en/s?q=Julia#main-content)\n\n[![Image 1: UCL Logo](https://cdn.ucl.ac.uk/logos/ucl/"
+      }
+    },
+    {
+      "id": "pqdtopen",
+      "mechanism": "curl-direct",
+      "url": "https://pqdtopen.proquest.com/",
+      "status": "ok",
+      "result": {
+        "http_status": 302
+      }
+    },
+    {
+      "id": "uic-thesis",
+      "mechanism": "firecrawl-scrape",
+      "url": "https://indigo.uic.edu/articles/thesis/Complex_Dynamics_Schwarzian_Derivatives_and_Measures_of_Maximal_Entropy/10870334",
+      "status": "ok",
+      "result": {
+        "author": true,
+        "posted": "2013-10-24",
+        "degree_doctoral": true,
+        "advisor_demarco": true,
+        "max_entropy_sentence": true,
+        "abstract_excerpt": "authored byHexi Ye We investigate the Schwarzian derivatives of a polynomial and its iterates, where the polynomial is defined over the field of complex numbers. The escape-rate function of the polynomial play an important role in the study of polynomial dynamics. The study of the sequence of Schwarzian derivatives leads to a connection with the escape-rate function. The polynomial basin of infinity admits a natural metric,which keeps a lot of polynomial dynamics information. The quadratic differential of the Schwarzian derivative determines a Riemannian metric on the complement of f^ns critical points. As n tends to infinite, this sequence of metric spaces has an ultralimit, which is a complete geodesic space with non-positive curvature. And by the properties inherited from the the dynamics of the polynomial, we can naturally embed the basin of infinity isometrically to the ultralimit. We also investigate rational functions with identical measure of maximal entropy. For a given rational function f : CP1CP1 with degree d  2, there is a unique probability measure f associated with it, which achieves maximal entropy logd among all the f -invariant probability measures. From the work "
+      }
+    },
+    {
+      "id": "arxiv-transcendental",
+      "mechanism": "curl-arxiv",
+      "url": "https://arxiv.org/abs/2609.06658",
+      "status": "ok",
+      "result": {
+        "title": "Equidistribution Measures of infinite entropy for Transcendental Functions",
+        "anchor_sentence_present": true,
+        "anchor_sentence": "both preimages and periodic points equidistribute to the unique measure of maximal entropy",
+        "abstract": "In the 1980s Lyubich and Freire-Lopes-Ma\u00f1\u00e9 proved that for any rational function of degree d \\geq 2, both preimages and periodic points equidistribute to the unique measure of maximal entropy log(d). Their results provide a fundamental understanding of the dynamics of iterated rational functions, and have since been generalized to many different contexts, including classes of higher-dimensional polynomial and rational maps. In the current paper we depart from the algebraic category and aim to prove analogous statements for transcendental functions in the complex plane, which have infinite topological entropy. We introduce two different methods for constructing invariant measures in the transcendental setting, namely via embedded symbolic dynamical systems and via transfer operators associated to suitably chosen weights. In the latter case we isolate three properties of the weights -normality, tightness, and irreducibility- which together imply convergence to an invariant measure. We provide examples for each method, given by three classes of transcendental entire functions: disjoint-type maps, strongly polynomial-like maps, and a class of maps inspired by Baker's construction of multiply connected wandering domains and by Bishop's construction of Julia sets of Hausdorff dimension"
+      }
+    },
+    {
+      "id": "exa-lane3-theses",
+      "mechanism": "exa-search",
+      "url": "https://api.exa.ai/search",
+      "status": "ok",
+      "result": {
+        "n": 8,
+        "hits": [
+          {
+            "title": "La m\u00e9thode d'it\u00e9ration inverse pour les ensembles de Julia du plan et de l'espace tridimensionnel",
+            "url": "http://depot-e.uqtr.ca/7317/1/030619143.pdf"
+          },
+          {
+            "title": "Efficiently Generating the Mandelbrot and Julia Sets",
+            "url": "https://theses.liacs.nl/pdf/2018-2019-JonckheereLSde.pdf"
+          },
+          {
+            "title": "[1311.6462] The Inverse Iteration Method for Julia Sets in the 3-Dimensional Space",
+            "url": "https://arxiv.org/abs/1311.6462"
+          },
+          {
+            "title": "EFFICIENT COMPUTATION OF JULIA SETS AND THEIR ...",
+            "url": "https://www.uni-konstanz.de/mmsp/pubsys/publishedFiles/Saupe87.pdf"
+          },
+          {
+            "title": "Inverse IFS Julia Sets: Differentiating Through Discontinuities",
+            "url": "https://cel.cs.brown.edu/csci-1951q-f25/assets/final/ahlbrand.pdf"
+          },
+          {
+            "title": "Certified Computation of Julia Sets via Numerical Methods",
+            "url": "https://open.clemson.edu/all_theses/4599"
+          },
+          {
+            "title": "Inverse Iteration Algorithms",
+            "url": "https://legacy.marksmath.org/scholarship/Julia.pdf"
+          },
+          {
+            "title": "1. Introduction. We all have seen many beautiful images of Julia sets [33], but can we really trust these images? Images of Julia sets are typically generated by iterating a complex polynomial on a mesh of initial points in the complex plane. Points whose orbits do not go to infinity are in the filled Julia set, by definition. This popular rendering method, called the escape time method, raises doubts about how reliable these images are because we are left wondering whether the point sampling was representative, whether the grid was fine enough, whether the partial orbits were long enough, and whether rounding errors in floating-point arithmetic were relevant but ignored. Similar qualms apply to other rendering methods. Therefore, for all we know, the images we have seen so far may simply be numerical artifacts. Of course, it is very unlikely that these images are actually false in any essential way, given that they have been computed independently many times and always look the same. However, as far as we know, no one has discussed the reliability of existing images of Julia sets, and no one has systematically produced images of Julia sets that carry mathematical guarantees. This is our goal here. In the simplest setting, a reliable image is a black-and-white image whose pixels represent rectangles in the complex plane such that a pixel is black if and only if it contains a part of the filled Julia set. Such images are also called 1-pixel approximations because they show the set of points in the plane whose distance to the filled Julia set is at most the diameter of a pixel.",
+            "url": "https://lhf.impa.br/ftp/papers/ij.pdf"
+          }
+        ]
+      }
+    },
+    {
+      "id": "uqtr-thesis",
+      "mechanism": "curl-direct+PyMuPDF",
+      "url": "https://depot-e.uqtr.ca/7317/1/030619143.pdf",
+      "status": "ok",
+      "result": {
+        "pages": 149,
+        "memoire_header": true,
+        "author_named": true,
+        "date_janvier_2014": true,
+        "n_non_uniform_passages": 1,
+        "non_uniform_passages": [
+          "rree et afficher celle qui ne se trouvent pas deja dans une region densement occupee du plan. Bien que ces solutions soient interessantes, les images presentees jusqu'a maintenant paraissent suffisantes pour illustrer les principes et l'efficacite de la methode d'iteration inverse. Elles n'ont donc pas ete tentees. La distribution non uniforme des points generes est discutee et eclaircie au chapitre 5. En somme, les resultats de ce chapitre permettent de mieux concevoir les ensembles de Julia du plan complexe associes au polynome Pc(z) = Z2 + c. D'abord introduits a partir de la definition classique, c'est-a-dire comme la frontiere des ensembles de Julia remplis, ils ont ensuite ete redefinis avec les familles normales de fonctions. Cette redefinition a mene a la demonstration d'un theoreme justifiant la methode d'iteration inverse p"
+        ],
+        "adapted_iim_section": "plexes et K2,c = :J2,c = :Jh Xe Jh ' Pour visualiser cet ensemble, la methode d'iteration inverse adaptee aux nombres bicomplexes est utilisee et fournie les images de la figure 4.4. Le point de depart de l'algorithme est determine a partir du point fixe repulsif dans :Jh : Wo = Zl el + Zl e2 ou Pi1 (Zl) = Zl et Zl E :1.1 ' Les calculs de J W - C sont effectues dans les composantes idempotentes. A chaque iteration, l'une des quatre branches de la racine carree bicomplexe est choisie au hasard et les resultats sont gardes en Chapitre 4. Les ensembles de Julia dans l'espace t",
+        "term_counts": {
+          "biais": 0,
+          "Brolin": 0,
+          "Lyubich": 0,
+          "entropie": 0,
+          "equidistrib": 0
+        }
+      }
+    },
+    {
+      "id": "arxiv-matteau",
+      "mechanism": "curl-arxiv",
+      "url": "https://arxiv.org/abs/1311.6462",
+      "status": "ok",
+      "result": {
+        "authors": [
+          "C. Matteau",
+          "D. Rochon"
+        ],
+        "adapted_iim_claim": true,
+        "abstract": "In this article, we introduce the adapted inverse iteration method to generate bicomplex Julia sets associated to the polynomial map $w^2+c$. The result is based on a full characterization of bicomplex Julia sets as the boundary of a particular bicomplex cartesian set and the study of the fixed points of $w^2+c$. The inverse iteration method is used in particular to generate and display in the usual 3-dimensional space bicomplex Julia sets that are dendrites."
+      }
+    },
+    {
+      "id": "saupe87-miim",
+      "mechanism": "curl-direct+PyMuPDF",
+      "url": "https://www.uni-konstanz.de/mmsp/pubsys/publishedFiles/Saupe87.pdf",
+      "status": "ok",
+      "result": {
+        "chars_extracted": 1,
+        "text_layer": false,
+        "physica_d_header": false,
+        "miim_passage": null,
+        "note": "scan without text layer if chars_extracted is tiny; bibliographic record carried by crossref-saupe87 probe"
+      }
+    },
+    {
+      "id": "crossref-saupe87",
+      "mechanism": "curl-crossref",
+      "url": "https://api.crossref.org/works?query.bibliographic=Saupe+Efficient+computation+of+Julia+sets",
+      "status": "ok",
+      "result": {
+        "top": [
+          {
+            "title": "Efficient computation of Julia sets and their fractal dimension",
+            "container": "Physica D: Nonlinear Phenomena",
+            "DOI": "10.1016/0167-2789(87)90024-8",
+            "issued": [
+              [
+                1987,
+                10
+              ]
+            ],
+            "volume": "28",
+            "page": "358-370"
+          },
+          {
+            "title": "Julia Sets: Fractal Basin Boundaries",
+            "container": "Chaos and Fractals",
+            "DOI": "10.1007/978-1-4757-4740-9_14",
+            "issued": [
+              [
+                1992
+              ]
+            ],
+            "volume": null,
+            "page": "769-840"
+          },
+          {
+            "title": "Julia Sets: Fractal Basin Boundaries",
+            "container": "Chaos and Fractals",
+            "DOI": "10.1007/0-387-21823-8_14",
+            "issued": [
+              [
+                2004
+              ]
+            ],
+            "volume": null,
+            "page": "715-781"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mcclure-iim",
+      "mechanism": "curl-direct+PyMuPDF",
+      "url": "https://legacy.marksmath.org/scholarship/Julia.pdf",
+      "status": "ok",
+      "result": {
+        "pages": 23,
+        "title_head": "Inverse Iteration Algorithms for Julia Sets by Mark McClure Inverse iteration algorithms are extremely fast methods to generate images of Julia sets. While they are fairl",
+        "nonuniform_passage": "to ordered pairs. 18 Julia.nb In[180]:= ListPlot[({Re[#1], Im[#1]} & ) /@ points, AspectRatio -> Automatic, Axes -> False, PlotStyle -> {AbsolutePointSize[0.4]}] Out[180]= These commands are encapsulated in the package function JuliaStochastic. Unfortunately, images generated in this manner frequently display the same nonuniform distribution we saw with JuliaSimple. The random inverse iteration algorithm may be improved, for some Julia sets, by skewing the probability of choosing one inverse over the other. This accomplished in our function JuliaStochastic with the option OneBias, which is a real number, strictly between 0 and 1, indicating the probability of choosing inv1. The probability of choosing inv2 is then, necessarily, 1-OneBias. The following example illustrates the effect of OneBias. Julia.nb 19 In[181]:= Show[GraphicsArray[{ {JuliaStochastic[-1, 8000, PlotLabel -> \"OneBias 0.5\", DisplayFunction -> Identity]}, {Juli",
+        "venue_strings_found": {
+          "Chaos": false,
+          "Fractals": true,
+          "Comput": false,
+          "Journal": true,
+          "Mathematica in Education": false
+        }
+      }
+    },
+    {
+      "id": "msc-pdf-link",
+      "mechanism": "curl-direct",
+      "url": "https://benedikt-bitterli.me/master-thesis.pdf",
+      "status": "ok",
+      "result": {
+        "http_status": 404
+      }
+    }
+  ]
+}

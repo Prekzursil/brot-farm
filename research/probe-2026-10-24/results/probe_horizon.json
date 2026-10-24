@@ -1,0 +1,503 @@
+{
+  "lane": "numeric-2-horizon-truncation",
+  "mode": "full",
+  "status": "ok",
+  "date": "2026-10-24",
+  "config": {
+    "maps": [
+      "mandel",
+      "cosmut"
+    ],
+    "H": 400,
+    "twoH": 800,
+    "refH": 1600,
+    "N": 4000000,
+    "size": 512,
+    "s0_batch": 50000,
+    "s0_batch_note": "batch = trace batch, fixed across caps and seeds: identical c-draws at every horizon; deposit pass replays the exact S0 ensemble",
+    "trace_batch": 50000,
+    "s2": {
+      "chains": 1024,
+      "step": 0.02
+    },
+    "seeds": {
+      "cosmut": {
+        "a": 867530900,
+        "b": 867530901,
+        "s2": 867530902
+      },
+      "mandel": {
+        "a": 867530910,
+        "b": 867530911,
+        "s2": 867530912
+      }
+    },
+    "seed_base": 867530900,
+    "roi_source": "data/ref_{map}_400.npz raw counts (audited 40M ref)",
+    "roi_rule": "top decile of positive-count pixels, count >= k-th largest (analyze.roi_from_ref, audited convention)",
+    "audited_commit": "4d87ef33ca50b1b33c6f5736bd59bad94bd54e70",
+    "repo_commit_head": "d29483dc60ac630fe98743d61b8492ef1596b2b4",
+    "python": "3.14.6",
+    "numpy": "2.4.4"
+  },
+  "maps": {
+    "mandel": {
+      "roi": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 924.0,
+        "roi_pixels": 26263,
+        "roi_mass_fraction": 0.2618064422981591,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "audited_cell_400": {
+        "b_S2_top": -0.3535219883183979,
+        "b_S0_study": -0.0014877259641969114,
+        "b_S0_control": 0.0009712676247863127,
+        "SE_b": 0.0017387710416642839,
+        "escape_fraction": 0.868762125
+      },
+      "runs": {
+        "cap400_a": {
+          "n_escaped": 3475272,
+          "n_culled": 475269,
+          "raw_total": 11738113.0,
+          "sec": 7.327799081802368,
+          "seed": 867530910
+        },
+        "cap400_b": {
+          "n_escaped": 3475204,
+          "n_culled": 475612,
+          "raw_total": 11752997.0,
+          "sec": 7.54412841796875,
+          "seed": 867530911
+        },
+        "cap800_a": {
+          "n_escaped": 3476982,
+          "n_culled": 475269,
+          "raw_total": 12687449.0,
+          "sec": 6.3180577754974365,
+          "seed": 867530910
+        },
+        "cap800_b": {
+          "n_escaped": 3476884,
+          "n_culled": 475612,
+          "raw_total": 12684104.0,
+          "sec": 6.1441709995269775,
+          "seed": 867530911
+        },
+        "cap1600_a": {
+          "n_escaped": 3477840,
+          "n_culled": 475269,
+          "raw_total": 13635879.0,
+          "sec": 7.73485255241394,
+          "seed": 867530910
+        },
+        "cap1600_b": {
+          "n_escaped": 3477742,
+          "n_culled": 475612,
+          "raw_total": 13623530.0,
+          "sec": 7.645594358444214,
+          "seed": 867530911
+        }
+      },
+      "dominance_check": {
+        "max_violation_rawH_minus_raw2H": 0.0,
+        "relative_to_max_bin": 0.0,
+        "note": "same seed + same batch schedule => identical c-draws; per-bin dominance must hold up to fp reordering"
+      },
+      "escape_fractions_seed_a": {
+        "f_at_H": 0.868818,
+        "f_at_2H": 0.8692455,
+        "f_at_refH": 0.86946,
+        "alive_at_H": 0.13118200000000002,
+        "new_escapers_(H,2H]": 0.0004275000000000251,
+        "new_escapers_(2H,refH]": 0.00021450000000000635,
+        "alive_at_refH": 0.13054,
+        "denominator": "n_drawn incl culled (study convention)"
+      },
+      "truncation_raw_roi": {
+        "missing_at_H": {
+          "mean_signed": 41.37889806952747,
+          "mean_abs": 41.37889806952747,
+          "total": 1086734.0
+        },
+        "missing_at_2H": {
+          "mean_signed": 20.589270075772,
+          "mean_abs": 20.589270075772,
+          "total": 540736.0
+        },
+        "missing_at_H_seed_b": {
+          "mean_signed": 41.06804249324144,
+          "mean_abs": 41.06804249324144,
+          "total": 1078570.0
+        },
+        "global_total_missing_H": 1897766.0,
+        "roi_share_of_missing_H": 0.5726385655555005,
+        "shrink_ratio_raw_2H_over_H": 0.4975789843696802,
+        "SE_mean_missing_H_duppair": 0.21980808596150433,
+        "SE_mean_missing_2H_duppair": 0.12169678448628155,
+        "bias_over_SE_H": 188.2501177721655,
+        "bias_over_SE_2H": 169.1849966511889
+      },
+      "truncation_norm_roi": {
+        "b_H": -0.12863503863426498,
+        "b_2H": -0.05769848687555141,
+        "b_H_seed_b": -0.1272922448511982,
+        "b_2H_seed_b": -0.05868561822843388,
+        "mean_abs_H": 0.14551371061276636,
+        "mean_abs_2H": 0.07155562843943274,
+        "SE_b_H_duppair": 0.0009494985897416627,
+        "SE_b_2H_duppair": 0.0006980072735450442,
+        "bias_over_SE_H": 135.4768085219207,
+        "bias_over_SE_2H": 82.66172726612422,
+        "shrink_ratio_abs_2H_over_H": 0.44854409411419927
+      },
+      "anchor_vs_audited_40M": {
+        "b_S0_4M_seed_a": -0.0029376146515172675,
+        "b_S0_4M_seed_b": -0.0029243800760705807,
+        "SE_b_duppair": 9.358258044477229e-06,
+        "mean_rel_err_seed_a": 0.08212253943393116,
+        "note": "comparable to the audited cap-400 S0 top-rung run"
+      },
+      "s2_arm": {
+        "cap400": {
+          "b_vs_matching_cap_S0_ref": -0.38042801889186745,
+          "ref_used": "S0 seed a @cap400 (normalized); also vs audited 40M ref @cap400 for audited-table comparability",
+          "b_vs_audited_40M_cap400": -0.389062738365518,
+          "acceptance": 0.5569155764533953,
+          "ess": 1131518.3254640347,
+          "n_states": 3196928,
+          "steps": 3902,
+          "sec": 101.47055435180664,
+          "seed": 867530912
+        },
+        "cap800": {
+          "b_vs_matching_cap_S0_ref": -0.3921120767784136,
+          "ref_used": "S0 seed a @cap800 (normalized)",
+          "b_vs_audited_40M_cap400": null,
+          "acceptance": 0.5378979445267457,
+          "ess": 1160067.5567183555,
+          "n_states": 3196928,
+          "steps": 3902,
+          "sec": 213.26792430877686,
+          "seed": 867530912
+        },
+        "SE_b_H_from_S0_duppair_vs_audref": 9.358258044477229e-06,
+        "bias_over_SE_H": 40651.58463079321,
+        "SE_b_2H_duppair": 0.0006980072735450442,
+        "bias_over_SE_2H": 561.7592991358844,
+        "shrink_ratio_abs_b_2H_over_H": 1.030712926772797
+      },
+      "deposit": {
+        "seed": 867530910,
+        "cap": 1600,
+        "sec": 42.869677782058716,
+        "identity_check": {
+          "corr_pred_dH_vs_meas_dH_roi": 1.0,
+          "sum_ratio_pred_over_meas_dH": 1.0,
+          "corr_pred_d2H_vs_meas_d2H_roi": 1.0,
+          "sum_ratio_pred_over_meas_d2H": 1.0,
+          "note": "deposit pass replays the exact S0 ensemble (same seed/batch schedule; trace consumes no RNG), so pred ~= measured up to the escape_mask chunk-32 checkpoint convention at the band edges (escape_mask@400 classifies detection steps <=384, the trace band uses the per-step time) and fp accumulation order"
+        },
+        "cohort_sizes_seed_a": {
+          "n_cohort_(H,refH]": 2568,
+          "n_cohort_(2H,refH]": 858,
+          "fraction_(H,refH]_of_drawn": 0.000642,
+          "fraction_(2H,refH]_of_drawn": 0.0002145
+        },
+        "band_decomposition_roi": {
+          "cohort_(H,2H]_mean_missing": 20.789627993755474,
+          "cohort_(H,2H]_total": 545998.0,
+          "cohort_(2H,refH]_total": 540736.0,
+          "predicted_shrink_ratio_2H_over_H": 0.4975789843696802
+        },
+        "terciles_missing_H": [
+          {
+            "band": "bottom",
+            "pixels": 8755,
+            "mean_score": 177.37976730947082,
+            "mean_missing": 20.270588235294117,
+            "mass_share": 0.1633049117815399,
+            "pixel_share": 0.3333587175874805
+          },
+          {
+            "band": "mid",
+            "pixels": 8754,
+            "mean_score": 289.9482115177924,
+            "mean_missing": 41.44379712131597,
+            "mass_share": 0.33384342442584847,
+            "pixel_share": 0.33332064120625976
+          },
+          {
+            "band": "top",
+            "pixels": 8754,
+            "mean_score": 390.27345944298435,
+            "mean_missing": 62.42472012794151,
+            "mass_share": 0.5028516637926116,
+            "pixel_share": 0.33332064120625976
+          }
+        ],
+        "terciles_missing_2H": [
+          {
+            "band": "bottom",
+            "pixels": 8755,
+            "mean_score": 177.37976730947082,
+            "mean_missing": 8.284294688749286,
+            "mass_share": 0.13413014853828856,
+            "pixel_share": 0.3333587175874805
+          },
+          {
+            "band": "mid",
+            "pixels": 8754,
+            "mean_score": 289.9482115177924,
+            "mean_missing": 19.47475439798949,
+            "mass_share": 0.31527769558527635,
+            "pixel_share": 0.33332064120625976
+          },
+          {
+            "band": "top",
+            "pixels": 8754,
+            "mean_score": 390.27345944298435,
+            "mean_missing": 34.01016678090016,
+            "mass_share": 0.5505921558764351,
+            "pixel_share": 0.33332064120625976
+          }
+        ],
+        "spearman_score_vs_missing_H": 0.8959169152617265,
+        "spearman_score_vs_missing_2H": 0.9094207701501744,
+        "roi_pixels_with_zero_visits": 235881
+      }
+    },
+    "cosmut": {
+      "roi": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 2972.0,
+        "roi_pixels": 26223,
+        "roi_mass_fraction": 0.5324567162345442,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "audited_cell_400": {
+        "b_S2_top": -0.10054006578939119,
+        "b_S0_study": -0.00030551445300694294,
+        "b_S0_control": 0.0010603144841885032,
+        "SE_b": 0.000965786903431715,
+        "escape_fraction": 0.869597925
+      },
+      "runs": {
+        "cap400_a": {
+          "n_escaped": 3478678,
+          "n_culled": 0,
+          "raw_total": 24841529.0,
+          "sec": 10.545310497283936,
+          "seed": 867530900
+        },
+        "cap400_b": {
+          "n_escaped": 3478821,
+          "n_culled": 0,
+          "raw_total": 24874069.0,
+          "sec": 11.017747402191162,
+          "seed": 867530901
+        },
+        "cap800_a": {
+          "n_escaped": 3480288,
+          "n_culled": 0,
+          "raw_total": 25734911.0,
+          "sec": 14.553013563156128,
+          "seed": 867530900
+        },
+        "cap800_b": {
+          "n_escaped": 3480403,
+          "n_culled": 0,
+          "raw_total": 25752772.0,
+          "sec": 15.709814071655273,
+          "seed": 867530901
+        },
+        "cap1600_a": {
+          "n_escaped": 3481029,
+          "n_culled": 0,
+          "raw_total": 26550401.0,
+          "sec": 23.326550006866455,
+          "seed": 867530900
+        },
+        "cap1600_b": {
+          "n_escaped": 3481199,
+          "n_culled": 0,
+          "raw_total": 26636951.0,
+          "sec": 21.158411264419556,
+          "seed": 867530901
+        }
+      },
+      "dominance_check": {
+        "max_violation_rawH_minus_raw2H": 0.0,
+        "relative_to_max_bin": 0.0,
+        "note": "same seed + same batch schedule => identical c-draws; per-bin dominance must hold up to fp reordering"
+      },
+      "escape_fractions_seed_a": {
+        "f_at_H": 0.8696695,
+        "f_at_2H": 0.870072,
+        "f_at_refH": 0.87025725,
+        "alive_at_H": 0.13033050000000002,
+        "new_escapers_(H,2H]": 0.0004024999999999723,
+        "new_escapers_(2H,refH]": 0.00018525000000002567,
+        "alive_at_refH": 0.12974275000000002,
+        "denominator": "n_drawn incl culled (study convention)"
+      },
+      "truncation_raw_roi": {
+        "missing_at_H": {
+          "mean_signed": 60.62002821950196,
+          "mean_abs": 60.62002821950196,
+          "total": 1589639.0
+        },
+        "missing_at_2H": {
+          "mean_signed": 29.092170994928118,
+          "mean_abs": 29.092170994928118,
+          "total": 762884.0
+        },
+        "missing_at_H_seed_b": {
+          "mean_signed": 62.74800747435457,
+          "mean_abs": 62.74800747435457,
+          "total": 1645441.0
+        },
+        "global_total_missing_H": 1708872.0,
+        "roi_share_of_missing_H": 0.9302270737656185,
+        "shrink_ratio_raw_2H_over_H": 0.47991021860938243,
+        "SE_mean_missing_H_duppair": 1.5047085613305782,
+        "SE_mean_missing_2H_duppair": 1.8183131018179166,
+        "bias_over_SE_H": 40.28688995156451,
+        "bias_over_SE_2H": 15.999538784515323
+      },
+      "truncation_norm_roi": {
+        "b_H": -0.033500043915316864,
+        "b_2H": -0.015440799746437287,
+        "b_H_seed_b": -0.03433088929269857,
+        "b_2H_seed_b": -0.01672251531265136,
+        "mean_abs_H": 0.08470848789809762,
+        "mean_abs_2H": 0.04012858929109454,
+        "SE_b_H_duppair": 0.0005874964004641004,
+        "SE_b_2H_duppair": 0.0009063097684223264,
+        "bias_over_SE_H": 57.021700709745744,
+        "bias_over_SE_2H": 17.037000244757497,
+        "shrink_ratio_abs_2H_over_H": 0.4609187911952992
+      },
+      "anchor_vs_audited_40M": {
+        "b_S0_4M_seed_a": -9.496500602087942e-05,
+        "b_S0_4M_seed_b": -0.0004853902903522014,
+        "SE_b_duppair": 0.0002760723660973637,
+        "mean_rel_err_seed_a": 0.03983299413069449,
+        "note": "comparable to the audited cap-400 S0 top-rung run"
+      },
+      "s2_arm": {
+        "cap400": {
+          "b_vs_matching_cap_S0_ref": -0.09085583891581407,
+          "ref_used": "S0 seed a @cap400 (normalized); also vs audited 40M ref @cap400 for audited-table comparability",
+          "b_vs_audited_40M_cap400": -0.09305788955908771,
+          "acceptance": 0.7033448986026586,
+          "ess": 1234798.0387583089,
+          "n_states": 3196928,
+          "steps": 3902,
+          "sec": 106.42808318138123,
+          "seed": 867530902
+        },
+        "cap800": {
+          "b_vs_matching_cap_S0_ref": -0.09771450880522958,
+          "ref_used": "S0 seed a @cap800 (normalized)",
+          "b_vs_audited_40M_cap400": null,
+          "acceptance": 0.7047496846973094,
+          "ess": 1341022.8070212766,
+          "n_states": 3196928,
+          "steps": 3902,
+          "sec": 139.38907599449158,
+          "seed": 867530902
+        },
+        "SE_b_H_from_S0_duppair_vs_audref": 0.0002760723660973637,
+        "bias_over_SE_H": 329.1015330515605,
+        "SE_b_2H_duppair": 0.0009063097684223264,
+        "bias_over_SE_2H": 107.8157956692089,
+        "shrink_ratio_abs_b_2H_over_H": 1.0754895884652023
+      },
+      "deposit": {
+        "seed": 867530900,
+        "cap": 1600,
+        "sec": 58.781148195266724,
+        "identity_check": {
+          "corr_pred_dH_vs_meas_dH_roi": 1.0,
+          "sum_ratio_pred_over_meas_dH": 1.0,
+          "corr_pred_d2H_vs_meas_d2H_roi": 1.0,
+          "sum_ratio_pred_over_meas_d2H": 1.0,
+          "note": "deposit pass replays the exact S0 ensemble (same seed/batch schedule; trace consumes no RNG), so pred ~= measured up to the escape_mask chunk-32 checkpoint convention at the band edges (escape_mask@400 classifies detection steps <=384, the trace band uses the per-step time) and fp accumulation order"
+        },
+        "cohort_sizes_seed_a": {
+          "n_cohort_(H,refH]": 2351,
+          "n_cohort_(2H,refH]": 741,
+          "fraction_(H,refH]_of_drawn": 0.00058775,
+          "fraction_(2H,refH]_of_drawn": 0.00018525
+        },
+        "band_decomposition_roi": {
+          "cohort_(H,2H]_mean_missing": 31.527857224573847,
+          "cohort_(H,2H]_total": 826755.0,
+          "cohort_(2H,refH]_total": 762884.0,
+          "predicted_shrink_ratio_2H_over_H": 0.4799102186093824
+        },
+        "terciles_missing_H": [
+          {
+            "band": "bottom",
+            "pixels": 8741,
+            "mean_score": 17.136025922257595,
+            "mean_missing": 1.3765015444457156,
+            "mass_share": 0.007569014096911311,
+            "pixel_share": 0.3333333333333333
+          },
+          {
+            "band": "mid",
+            "pixels": 8741,
+            "mean_score": 116.43304009093826,
+            "mean_missing": 50.763528200434735,
+            "mass_share": 0.2791350740639856,
+            "pixel_share": 0.3333333333333333
+          },
+          {
+            "band": "top",
+            "pixels": 8741,
+            "mean_score": 228.7566369419879,
+            "mean_missing": 129.72005491362543,
+            "mass_share": 0.7132959118391031,
+            "pixel_share": 0.3333333333333333
+          }
+        ],
+        "terciles_missing_2H": [
+          {
+            "band": "bottom",
+            "pixels": 8741,
+            "mean_score": 17.136025922257595,
+            "mean_missing": 0.5206498112344126,
+            "mass_share": 0.005965520315015127,
+            "pixel_share": 0.3333333333333333
+          },
+          {
+            "band": "mid",
+            "pixels": 8741,
+            "mean_score": 116.43304009093826,
+            "mean_missing": 22.98638599702551,
+            "mass_share": 0.26337424824744,
+            "pixel_share": 0.3333333333333333
+          },
+          {
+            "band": "top",
+            "pixels": 8741,
+            "mean_score": 228.7566369419879,
+            "mean_missing": 63.769477176524425,
+            "mass_share": 0.7306602314375449,
+            "pixel_share": 0.3333333333333333
+          }
+        ],
+        "spearman_score_vs_missing_H": 0.9460716364493704,
+        "spearman_score_vs_missing_2H": 0.9414972514730376,
+        "roi_pixels_with_zero_visits": 235921
+      }
+    }
+  },
+  "errors": [],
+  "written_at": "2026-10-24T04:14:37"
+}

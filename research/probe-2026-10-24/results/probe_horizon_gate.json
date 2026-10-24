@@ -1,0 +1,721 @@
+{
+  "lane": "numeric-2-horizon-truncation-gate",
+  "mode": "full",
+  "status": "ok",
+  "date": "2026-10-24",
+  "gate_rule": "gate = CONFIRMED iff the raw missing-mass shrink ratio (ROI mean at 2H / ROI mean at H, both vs refH) is in [0.35, 0.65] on BOTH maps, primary ROI = audited cap-1500 mask, seed a; seed-b / normalized-b / companion-mask ratios recorded as checks; else NOT-CONFIRMED",
+  "config": {
+    "maps": [
+      "mandel",
+      "cosmut"
+    ],
+    "H": 1500,
+    "twoH": 3000,
+    "refH": 6000,
+    "N": 4000000,
+    "size": 512,
+    "s0_batch": 50000,
+    "s0_batch_note": "batch = trace batch, fixed across caps and seeds: identical c-draws at every horizon; deposit pass replays the exact S0 ensemble",
+    "trace_batch": 50000,
+    "seeds": {
+      "cosmut": {
+        "a": 867530900,
+        "b": 867530901
+      },
+      "mandel": {
+        "a": 867530910,
+        "b": 867530911
+      }
+    },
+    "seed_base": 867530900,
+    "seeds_note": "identical to the 2026-10-24 lane (experiments/src/probe_horizon.py); the lane's s2 seed slot is unused here (no S2 arm)",
+    "primary_roi_source": "data/ref_{map}_1500.npz raw counts (audited 40M ref, the gated channel)",
+    "companion_roi_source": "data/ref_{map}_400.npz raw counts (audited 40M ref; the lane's mask, for direct lane comparability)",
+    "roi_rule": "top decile of positive-count pixels, count >= k-th largest (analyze.roi_from_ref, audited convention)",
+    "anchor_ref": "data/ref_{map}_1500.npz normalized (audited 40M cap-1500 reference)",
+    "s2_arm": "not rerun (out of gate scope; the lane measured S2's horizon-independence at 400/800)",
+    "audited_commit": "4d87ef33ca50b1b33c6f5736bd59bad94bd54e70",
+    "repo_commit_head": "d29483dc60ac630fe98743d61b8492ef1596b2b4",
+    "python": "3.14.6",
+    "numpy": "2.4.4"
+  },
+  "maps": {
+    "mandel": {
+      "roi": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 1240.0,
+        "roi_pixels": 26215,
+        "roi_mass_fraction": 0.3084942688568492,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "roi_companion_400": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 924.0,
+        "roi_pixels": 26263,
+        "roi_mass_fraction": 0.2618064422981591,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "audited_cell_1500": {
+        "b_S2_top": -0.3838451912183887,
+        "b_S0_study": -0.004623324706854252,
+        "b_S0_control": -0.00448766158903835,
+        "SE_b": 9.592831056453402e-05,
+        "escape_fraction": 0.869463325
+      },
+      "audited_cell_400": {
+        "b_S2_top": -0.3535219883183979,
+        "b_S0_study": -0.0014877259641969114,
+        "b_S0_control": 0.0009712676247863127,
+        "SE_b": 0.0017387710416642839,
+        "escape_fraction": 0.868762125
+      },
+      "runs": {
+        "cap1500_a": {
+          "n_escaped": 3477789,
+          "n_culled": 475269,
+          "raw_total": 13557090.0,
+          "sec": 9.447098016738892,
+          "seed": 867530910
+        },
+        "cap1500_b": {
+          "n_escaped": 3477686,
+          "n_culled": 475612,
+          "raw_total": 13536880.0,
+          "sec": 8.988265037536621,
+          "seed": 867530911
+        },
+        "cap3000_a": {
+          "n_escaped": 3478240,
+          "n_culled": 475269,
+          "raw_total": 14492925.0,
+          "sec": 13.640310764312744,
+          "seed": 867530910
+        },
+        "cap3000_b": {
+          "n_escaped": 3478109,
+          "n_culled": 475612,
+          "raw_total": 14408616.0,
+          "sec": 14.794010877609253,
+          "seed": 867530911
+        },
+        "cap6000_a": {
+          "n_escaped": 3478441,
+          "n_culled": 475269,
+          "raw_total": 15343192.0,
+          "sec": 27.630067586898804,
+          "seed": 867530910
+        },
+        "cap6000_b": {
+          "n_escaped": 3478319,
+          "n_culled": 475612,
+          "raw_total": 15277078.0,
+          "sec": 28.555999755859375,
+          "seed": 867530911
+        }
+      },
+      "dominance_check": {
+        "max_violation_rawH_minus_raw2H": 0.0,
+        "relative_to_max_bin": 0.0,
+        "note": "same seed + same batch schedule => identical c-draws; per-bin dominance must hold up to fp reordering"
+      },
+      "escape_fractions_seed_a": {
+        "f_at_H": 0.86944725,
+        "f_at_2H": 0.86956,
+        "f_at_refH": 0.86961025,
+        "alive_at_H": 0.13055275,
+        "new_escapers_(H,2H]": 0.0001127499999999948,
+        "new_escapers_(2H,refH]": 5.025000000002944e-05,
+        "alive_at_refH": 0.13038974999999997,
+        "denominator": "n_drawn incl culled (study convention)"
+      },
+      "truncation_raw_roi": {
+        "missing_at_H": {
+          "mean_signed": 44.139118825100134,
+          "mean_abs": 44.139118825100134,
+          "total": 1157107.0
+        },
+        "missing_at_2H": {
+          "mean_signed": 21.403051687964904,
+          "mean_abs": 21.403051687964904,
+          "total": 561081.0
+        },
+        "missing_at_H_seed_b": {
+          "mean_signed": 42.61762349799733,
+          "mean_abs": 42.61762349799733,
+          "total": 1117221.0
+        },
+        "missing_at_2H_seed_b": {
+          "mean_signed": 21.467976349418272,
+          "mean_abs": 21.467976349418272,
+          "total": 562783.0
+        },
+        "global_total_missing_H": 1786102.0,
+        "roi_share_of_missing_H": 0.6478392611396213,
+        "shrink_ratio_raw_2H_over_H": 0.48489984072345943,
+        "shrink_ratio_raw_2H_over_H_seed_b": 0.5037347131856634,
+        "SE_mean_missing_H_duppair": 1.0758596633380377,
+        "SE_mean_missing_2H_duppair": 0.0459086683799174,
+        "bias_over_SE_H": 41.0268367977948,
+        "bias_over_SE_2H": 466.2093770798109
+      },
+      "truncation_raw_roi_cap400mask": {
+        "missing_at_H": {
+          "mean_signed": 38.44339945931539,
+          "mean_abs": 38.44339945931539,
+          "total": 1009639.0
+        },
+        "missing_at_2H": {
+          "mean_signed": 18.65518029166508,
+          "mean_abs": 18.65518029166508,
+          "total": 489941.0
+        },
+        "missing_at_H_seed_b": {
+          "mean_signed": 37.24498343677417,
+          "mean_abs": 37.24498343677417,
+          "total": 978165.0
+        },
+        "missing_at_2H_seed_b": {
+          "mean_signed": 18.79259795149069,
+          "mean_abs": 18.79259795149069,
+          "total": 493550.0
+        },
+        "global_total_missing_H": 1786102.0,
+        "roi_share_of_missing_H": 0.5652751074686664,
+        "shrink_ratio_raw_2H_over_H": 0.485263544692707,
+        "shrink_ratio_raw_2H_over_H_seed_b": 0.5045672253658636,
+        "SE_mean_missing_H_duppair": 0.8474080962215047,
+        "SE_mean_missing_2H_duppair": 0.09716895911747647,
+        "bias_over_SE_H": 45.365862836017364,
+        "bias_over_SE_2H": 191.98703434819262
+      },
+      "truncation_norm_roi": {
+        "b_H": -0.09990287867289568,
+        "b_2H": -0.044292861056330665,
+        "b_H_seed_b": -0.09813607454723199,
+        "b_2H_seed_b": -0.045600453529058324,
+        "mean_abs_H": 0.1170738021691683,
+        "mean_abs_2H": 0.061186234255204044,
+        "SE_b_H_duppair": 0.00124931917828517,
+        "SE_b_2H_duppair": 0.0009246075044942133,
+        "bias_over_SE_H": 79.96585693179186,
+        "bias_over_SE_2H": 47.90450092719086,
+        "shrink_ratio_abs_b_2H_over_H": 0.44335920690889574,
+        "ref_used": "S0 seed a/b @cap6000 (normalized), same-mask"
+      },
+      "anchor_vs_audited_40M_cap1500": {
+        "b_S0_4M_seed_a": 0.0028378965447346007,
+        "b_S0_4M_seed_b": -0.0016069882645717685,
+        "SE_b_duppair": 0.0031430081902536072,
+        "mean_rel_err_seed_a": 0.08228242172179258,
+        "note": "comparable to the audited cap-1500 S0 top-rung run (audited_cell_1500 above)"
+      },
+      "deposit": {
+        "seed": 867530910,
+        "cap": 6000,
+        "sec": 62.45003414154053,
+        "cohort_sizes_seed_a": {
+          "n_cohort_(H,refH]": 652,
+          "n_cohort_(2H,refH]": 201,
+          "fraction_(H,refH]_of_drawn": 0.000163,
+          "fraction_(2H,refH]_of_drawn": 5.025e-05
+        },
+        "primary_roi_cap1500mask": {
+          "identity_check": {
+            "corr_pred_dH_vs_meas_dH_roi": 1.0,
+            "sum_ratio_pred_over_meas_dH": 1.0,
+            "corr_pred_d2H_vs_meas_d2H_roi": 1.0,
+            "sum_ratio_pred_over_meas_d2H": 1.0,
+            "note": "deposit pass replays the exact S0 ensemble (same seed/batch schedule; trace consumes no RNG), so pred ~= measured up to fp accumulation order (escape_mask checks in chunks of 32 with a final partial-chunk check at exactly max_iter, so a cap-H render holds exactly the per-step-t <= H orbits, same semantics as the trace's per-step times)"
+          },
+          "band_decomposition_roi": {
+            "cohort_(H,2H]_mean_missing": 22.73606713713523,
+            "cohort_(H,2H]_total": 596026.0,
+            "cohort_(2H,refH]_total": 561081.0,
+            "predicted_shrink_ratio_2H_over_H": 0.48489984072345943
+          },
+          "terciles_missing_H": [
+            {
+              "band": "bottom",
+              "pixels": 8739,
+              "mean_score": 531.645764734213,
+              "mean_missing": 20.35644810619064,
+              "mass_share": 0.1537411838317459,
+              "pixel_share": 0.3333587640663742
+            },
+            {
+              "band": "mid",
+              "pixels": 8738,
+              "mean_score": 868.9032125295453,
+              "mean_missing": 40.584687571526665,
+              "mass_share": 0.3064790032382485,
+              "pixel_share": 0.3333206179668129
+            },
+            {
+              "band": "top",
+              "pixels": 8738,
+              "mean_score": 1294.660979989402,
+              "mean_missing": 71.47894254978256,
+              "mass_share": 0.5397798129300057,
+              "pixel_share": 0.3333206179668129
+            }
+          ],
+          "terciles_missing_2H": [
+            {
+              "band": "bottom",
+              "pixels": 8739,
+              "mean_score": 531.645764734213,
+              "mean_missing": 7.060075523515277,
+              "mass_share": 0.10996273265357408,
+              "pixel_share": 0.3333587640663742
+            },
+            {
+              "band": "mid",
+              "pixels": 8738,
+              "mean_score": 868.9032125295453,
+              "mean_missing": 16.87663080796521,
+              "mass_share": 0.2628283616803991,
+              "pixel_share": 0.3333206179668129
+            },
+            {
+              "band": "top",
+              "pixels": 8738,
+              "mean_score": 1294.660979989402,
+              "mean_missing": 40.27409018081941,
+              "mass_share": 0.6272089056660268,
+              "pixel_share": 0.3333206179668129
+            }
+          ],
+          "spearman_score_vs_missing_H": 0.8958345725925256,
+          "spearman_score_vs_missing_2H": 0.8871996451272265,
+          "roi_pixels_with_zero_visits": 235929
+        },
+        "companion_roi_cap400mask": {
+          "identity_check": {
+            "corr_pred_dH_vs_meas_dH_roi": 0.9999999999999999,
+            "sum_ratio_pred_over_meas_dH": 1.0,
+            "corr_pred_d2H_vs_meas_d2H_roi": 0.9999999999999999,
+            "sum_ratio_pred_over_meas_d2H": 1.0,
+            "note": "deposit pass replays the exact S0 ensemble (same seed/batch schedule; trace consumes no RNG), so pred ~= measured up to fp accumulation order (escape_mask checks in chunks of 32 with a final partial-chunk check at exactly max_iter, so a cap-H render holds exactly the per-step-t <= H orbits, same semantics as the trace's per-step times)"
+          },
+          "band_decomposition_roi": {
+            "cohort_(H,2H]_mean_missing": 19.788219167650308,
+            "cohort_(H,2H]_total": 519698.0,
+            "cohort_(2H,refH]_total": 489941.0,
+            "predicted_shrink_ratio_2H_over_H": 0.485263544692707
+          },
+          "terciles_missing_H": [
+            {
+              "band": "bottom",
+              "pixels": 8755,
+              "mean_score": 396.24502060857003,
+              "mean_missing": 12.69537407195888,
+              "mass_share": 0.11008687263467437,
+              "pixel_share": 0.3333587175874805
+            },
+            {
+              "band": "mid",
+              "pixels": 8754,
+              "mean_score": 774.8555157132328,
+              "mean_missing": 34.9000456933973,
+              "mass_share": 0.30259825541604474,
+              "pixel_share": 0.33332064120625976
+            },
+            {
+              "band": "top",
+              "pixels": 8754,
+              "mean_score": 1212.397629128309,
+              "mean_missing": 67.73771989947453,
+              "mass_share": 0.5873148719492809,
+              "pixel_share": 0.33332064120625976
+            }
+          ],
+          "terciles_missing_2H": [
+            {
+              "band": "bottom",
+              "pixels": 8755,
+              "mean_score": 396.24502060857003,
+              "mean_missing": 4.103826384922901,
+              "mass_share": 0.07333331972625275,
+              "pixel_share": 0.3333587175874805
+            },
+            {
+              "band": "mid",
+              "pixels": 8754,
+              "mean_score": 774.8555157132328,
+              "mean_missing": 14.055974411697509,
+              "mass_share": 0.2511445255653232,
+              "pixel_share": 0.33332064120625976
+            },
+            {
+              "band": "top",
+              "pixels": 8754,
+              "mean_score": 1212.397629128309,
+              "mean_missing": 37.80740233036326,
+              "mass_share": 0.675522154708424,
+              "pixel_share": 0.33332064120625976
+            }
+          ],
+          "spearman_score_vs_missing_H": 0.9253974061864726,
+          "spearman_score_vs_missing_2H": 0.9105758236615105,
+          "roi_pixels_with_zero_visits": 235881
+        }
+      },
+      "gate_inputs": {
+        "shrink_ratio_raw_primary_roi_seed_a": 0.48489984072345943,
+        "shrink_ratio_raw_primary_roi_seed_b": 0.5037347131856634,
+        "shrink_ratio_raw_cap400mask_seed_a": 0.485263544692707,
+        "shrink_ratio_normalized_seed_a": 0.44335920690889574,
+        "predicted_shrink_from_cohort_decomposition": 0.48489984072345943,
+        "in_band_primary": true
+      }
+    },
+    "cosmut": {
+      "roi": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 3072.0,
+        "roi_pixels": 26220,
+        "roi_mass_fraction": 0.5577459971164033,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "roi_companion_400": {
+        "n_positive_pixels": 262144,
+        "decile_k": 26215,
+        "threshold_count": 2972.0,
+        "roi_pixels": 26223,
+        "roi_mass_fraction": 0.5324567162345442,
+        "rule": "top decile of positive-count pixels, count >= k-th largest"
+      },
+      "audited_cell_1500": {
+        "b_S2_top": -0.10124086101369606,
+        "b_S0_study": -0.0009221214560573822,
+        "b_S0_control": 0.00041104347684179835,
+        "SE_b": 0.0009426899644931192,
+        "escape_fraction": 0.870042625
+      },
+      "audited_cell_400": {
+        "b_S2_top": -0.10054006578939119,
+        "b_S0_study": -0.00030551445300694294,
+        "b_S0_control": 0.0010603144841885032,
+        "SE_b": 0.000965786903431715,
+        "escape_fraction": 0.869597925
+      },
+      "runs": {
+        "cap1500_a": {
+          "n_escaped": 3480983,
+          "n_culled": 0,
+          "raw_total": 26479196.0,
+          "sec": 20.9111967086792,
+          "seed": 867530900
+        },
+        "cap1500_b": {
+          "n_escaped": 3481142,
+          "n_culled": 0,
+          "raw_total": 26548459.0,
+          "sec": 29.306570053100586,
+          "seed": 867530901
+        },
+        "cap3000_a": {
+          "n_escaped": 3481410,
+          "n_culled": 0,
+          "raw_total": 27380518.0,
+          "sec": 35.69430232048035,
+          "seed": 867530900
+        },
+        "cap3000_b": {
+          "n_escaped": 3481528,
+          "n_culled": 0,
+          "raw_total": 27360747.0,
+          "sec": 34.219353675842285,
+          "seed": 867530901
+        },
+        "cap6000_a": {
+          "n_escaped": 3481616,
+          "n_culled": 0,
+          "raw_total": 28251811.0,
+          "sec": 67.32653784751892,
+          "seed": 867530900
+        },
+        "cap6000_b": {
+          "n_escaped": 3481742,
+          "n_culled": 0,
+          "raw_total": 28248957.0,
+          "sec": 58.41020464897156,
+          "seed": 867530901
+        }
+      },
+      "dominance_check": {
+        "max_violation_rawH_minus_raw2H": 0.0,
+        "relative_to_max_bin": 0.0,
+        "note": "same seed + same batch schedule => identical c-draws; per-bin dominance must hold up to fp reordering"
+      },
+      "escape_fractions_seed_a": {
+        "f_at_H": 0.87024575,
+        "f_at_2H": 0.8703525,
+        "f_at_refH": 0.870404,
+        "alive_at_H": 0.12975424999999996,
+        "new_escapers_(H,2H]": 0.00010674999999993329,
+        "new_escapers_(2H,refH]": 5.1499999999982116e-05,
+        "alive_at_refH": 0.12959600000000004,
+        "denominator": "n_drawn incl culled (study convention)"
+      },
+      "truncation_raw_roi": {
+        "missing_at_H": {
+          "mean_signed": 65.36708619374524,
+          "mean_abs": 65.36708619374524,
+          "total": 1713925.0
+        },
+        "missing_at_2H": {
+          "mean_signed": 32.21765827612509,
+          "mean_abs": 32.21765827612509,
+          "total": 844747.0
+        },
+        "missing_at_H_seed_b": {
+          "mean_signed": 62.53802440884821,
+          "mean_abs": 62.53802440884821,
+          "total": 1639747.0
+        },
+        "missing_at_2H_seed_b": {
+          "mean_signed": 32.75381388253242,
+          "mean_abs": 32.75381388253242,
+          "total": 858805.0
+        },
+        "global_total_missing_H": 1772615.0,
+        "roi_share_of_missing_H": 0.9668907235919814,
+        "shrink_ratio_raw_2H_over_H": 0.4928727919833131,
+        "shrink_ratio_raw_2H_over_H_seed_b": 0.5237423822089627,
+        "SE_mean_missing_H_duppair": 2.0004487724964064,
+        "SE_mean_missing_2H_duppair": 0.37911926506180643,
+        "bias_over_SE_H": 32.676211004479825,
+        "bias_over_SE_2H": 84.98027202830953
+      },
+      "truncation_raw_roi_cap400mask": {
+        "missing_at_H": {
+          "mean_signed": 63.72234298135225,
+          "mean_abs": 63.72234298135225,
+          "total": 1670991.0
+        },
+        "missing_at_2H": {
+          "mean_signed": 31.44464782824238,
+          "mean_abs": 31.44464782824238,
+          "total": 824573.0
+        },
+        "missing_at_H_seed_b": {
+          "mean_signed": 60.8734698547077,
+          "mean_abs": 60.8734698547077,
+          "total": 1596285.0
+        },
+        "missing_at_2H_seed_b": {
+          "mean_signed": 31.82808984479274,
+          "mean_abs": 31.82808984479274,
+          "total": 834628.0
+        },
+        "global_total_missing_H": 1772615.0,
+        "roi_share_of_missing_H": 0.9426700101262824,
+        "shrink_ratio_raw_2H_over_H": 0.49346345970744304,
+        "shrink_ratio_raw_2H_over_H_seed_b": 0.522856507453243,
+        "SE_mean_missing_H_duppair": 2.014457506590482,
+        "SE_mean_missing_2H_duppair": 0.2711344500946025,
+        "bias_over_SE_H": 31.632507894993452,
+        "bias_over_SE_2H": 115.9743729255759
+      },
+      "truncation_norm_roi": {
+        "b_H": -0.027339878703482274,
+        "b_2H": -0.01289693204937026,
+        "b_H_seed_b": -0.025657575731729918,
+        "b_2H_seed_b": -0.012875280069541178,
+        "mean_abs_H": 0.07811708831230853,
+        "mean_abs_2H": 0.037909056876025866,
+        "SE_b_H_duppair": 0.0011895678393363716,
+        "SE_b_2H_duppair": 1.531026176325803e-05,
+        "bias_over_SE_H": 22.9830345100238,
+        "bias_over_SE_2H": 842.3717535856022,
+        "shrink_ratio_abs_b_2H_over_H": 0.4717260156581302,
+        "ref_used": "S0 seed a/b @cap6000 (normalized), same-mask"
+      },
+      "anchor_vs_audited_40M_cap1500": {
+        "b_S0_4M_seed_a": 0.00045535560723067244,
+        "b_S0_4M_seed_b": 0.0012630373193765008,
+        "SE_b_duppair": 0.0005711172156986763,
+        "mean_rel_err_seed_a": 0.03939748645874911,
+        "note": "comparable to the audited cap-1500 S0 top-rung run (audited_cell_1500 above)"
+      },
+      "deposit": {
+        "seed": 867530900,
+        "cap": 6000,
+        "sec": 339.1853938102722,
+        "cohort_sizes_seed_a": {
+          "n_cohort_(H,refH]": 633,
+          "n_cohort_(2H,refH]": 206,
+          "fraction_(H,refH]_of_drawn": 0.00015825,
+          "fraction_(2H,refH]_of_drawn": 5.15e-05
+        },
+        "primary_roi_cap1500mask": {
+          "identity_check": {
+            "corr_pred_dH_vs_meas_dH_roi": 1.0,
+            "sum_ratio_pred_over_meas_dH": 1.0,
+            "corr_pred_d2H_vs_meas_d2H_roi": 1.0,
+            "sum_ratio_pred_over_meas_d2H": 1.0,
+            "note": "deposit pass replays the exact S0 ensemble (same seed/batch schedule; trace consumes no RNG), so pred ~= measured up to fp accumulation order (escape_mask checks in chunks of 32 with a final partial-chunk check at exactly max_iter, so a cap-H render holds exactly the per-step-t <= H orbits, same semantics as the trace's per-step times)"
+          },
+          "band_decomposition_roi": {
+            "cohort_(H,2H]_mean_missing": 33.14942791762014,
+            "cohort_(H,2H]_total": 869178.0,
+            "cohort_(2H,refH]_total": 844747.0,
+            "predicted_shrink_ratio_2H_over_H": 0.49287279198331313
+          },
+          "terciles_missing_H": [
+            {
+              "band": "bottom",
+              "pixels": 8740,
+              "mean_score": 24.171403195167617,
+              "mean_missing": 0.8622425629290618,
+              "mass_share": 0.0043969251863412925,
+              "pixel_share": 0.3333333333333333
+            },
+            {
+              "band": "mid",
+              "pixels": 8740,
+              "mean_score": 373.34071393415803,
+              "mean_missing": 53.154347826086955,
+              "mass_share": 0.27105561795294425,
+              "pixel_share": 0.3333333333333333
+            },
+            {
+              "band": "top",
+              "pixels": 8740,
+              "mean_score": 779.1817202007884,
+              "mean_missing": 142.08466819221968,
+              "mass_share": 0.7245474568607144,
+              "pixel_share": 0.3333333333333333
+            }
+          ],
+          "terciles_missing_2H": [
+            {
+              "band": "bottom",
+              "pixels": 8740,
+              "mean_score": 24.171403195167617,
+              "mean_missing": 0.3305491990846682,
+              "mass_share": 0.003419958875260877,
+              "pixel_share": 0.3333333333333333
+            },
+            {
+              "band": "mid",
+              "pixels": 8740,
+              "mean_score": 373.34071393415803,
+              "mean_missing": 24.653318077803203,
+              "mass_share": 0.2550704530468886,
+              "pixel_share": 0.3333333333333333
+            },
+            {
+              "band": "top",
+              "pixels": 8740,
+              "mean_score": 779.1817202007884,
+              "mean_missing": 71.66910755148741,
+              "mass_share": 0.7415095880778505,
+              "pixel_share": 0.3333333333333333
+            }
+          ],
+          "spearman_score_vs_missing_H": 0.9457198121393902,
+          "spearman_score_vs_missing_2H": 0.9416273898837456,
+          "roi_pixels_with_zero_visits": 235924
+        },
+        "companion_roi_cap400mask": {
+          "identity_check": {
+            "corr_pred_dH_vs_meas_dH_roi": 0.9999999999999998,
+            "sum_ratio_pred_over_meas_dH": 1.0,
+            "corr_pred_d2H_vs_meas_d2H_roi": 1.0,
+            "sum_ratio_pred_over_meas_d2H": 1.0,
+            "note": "deposit pass replays the exact S0 ensemble (same seed/batch schedule; trace consumes no RNG), so pred ~= measured up to fp accumulation order (escape_mask checks in chunks of 32 with a final partial-chunk check at exactly max_iter, so a cap-H render holds exactly the per-step-t <= H orbits, same semantics as the trace's per-step times)"
+          },
+          "band_decomposition_roi": {
+            "cohort_(H,2H]_mean_missing": 32.27769515310987,
+            "cohort_(H,2H]_total": 846418.0,
+            "cohort_(2H,refH]_total": 824573.0,
+            "predicted_shrink_ratio_2H_over_H": 0.49346345970744304
+          },
+          "terciles_missing_H": [
+            {
+              "band": "bottom",
+              "pixels": 8741,
+              "mean_score": 20.34293387887919,
+              "mean_missing": 0.5185905502802883,
+              "mass_share": 0.002712761469092293,
+              "pixel_share": 0.3333333333333333
+            },
+            {
+              "band": "mid",
+              "pixels": 8741,
+              "mean_score": 338.847578371213,
+              "mean_missing": 48.36654844983411,
+              "mass_share": 0.2530067486898493,
+              "pixel_share": 0.3333333333333333
+            },
+            {
+              "band": "top",
+              "pixels": 8741,
+              "mean_score": 769.2963591903011,
+              "mean_missing": 142.28188994394233,
+              "mass_share": 0.7442804898410584,
+              "pixel_share": 0.3333333333333333
+            }
+          ],
+          "terciles_missing_2H": [
+            {
+              "band": "bottom",
+              "pixels": 8741,
+              "mean_score": 20.34293387887919,
+              "mean_missing": 0.18968081455211075,
+              "mass_share": 0.0020107376787743473,
+              "pixel_share": 0.3333333333333333
+            },
+            {
+              "band": "mid",
+              "pixels": 8741,
+              "mean_score": 338.847578371213,
+              "mean_missing": 22.352248026541584,
+              "mass_share": 0.23694809313426465,
+              "pixel_share": 0.3333333333333333
+            },
+            {
+              "band": "top",
+              "pixels": 8741,
+              "mean_score": 769.2963591903011,
+              "mean_missing": 71.79201464363345,
+              "mass_share": 0.761041169186961,
+              "pixel_share": 0.3333333333333333
+            }
+          ],
+          "spearman_score_vs_missing_H": 0.9500658901749824,
+          "spearman_score_vs_missing_2H": 0.94519375718178,
+          "roi_pixels_with_zero_visits": 235921
+        }
+      },
+      "gate_inputs": {
+        "shrink_ratio_raw_primary_roi_seed_a": 0.4928727919833131,
+        "shrink_ratio_raw_primary_roi_seed_b": 0.5237423822089627,
+        "shrink_ratio_raw_cap400mask_seed_a": 0.49346345970744304,
+        "shrink_ratio_normalized_seed_a": 0.4717260156581302,
+        "predicted_shrink_from_cohort_decomposition": 0.49287279198331313,
+        "in_band_primary": true
+      }
+    }
+  },
+  "errors": [],
+  "written_at": "2026-10-24T04:58:26",
+  "verdict": {
+    "rule": "gate = CONFIRMED iff the raw missing-mass shrink ratio (ROI mean at 2H / ROI mean at H, both vs refH) is in [0.35, 0.65] on BOTH maps, primary ROI = audited cap-1500 mask, seed a; seed-b / normalized-b / companion-mask ratios recorded as checks; else NOT-CONFIRMED",
+    "shrink_ratio_raw_primary_roi_seed_a": {
+      "mandel": 0.48489984072345943,
+      "cosmut": 0.4928727919833131
+    },
+    "in_band_[0.35,0.65]": {
+      "mandel": true,
+      "cosmut": true
+    },
+    "gate": "CONFIRMED",
+    "confirmed": true
+  }
+}

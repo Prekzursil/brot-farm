@@ -1,0 +1,88 @@
+[
+  {
+    "check": "s0_clone_vs_study_sample_uniform",
+    "map": "mandel",
+    "seed": 20261425,
+    "budget": 250000,
+    "n_escaped_study": 217523,
+    "n_escaped_probe": 217523,
+    "identical_escape_count": true,
+    "tv_normalized_hist": 0.0,
+    "mass_per_draw_study": 3.398648,
+    "mass_per_draw_probe": 3.398648
+  },
+  {
+    "check": "s0_clone_vs_study_sample_uniform",
+    "map": "cosmut",
+    "seed": 20261424,
+    "budget": 250000,
+    "n_escaped_study": 217350,
+    "n_escaped_probe": 217350,
+    "identical_escape_count": true,
+    "tv_normalized_hist": 0.0,
+    "mass_per_draw_study": 6.532376,
+    "mass_per_draw_probe": 6.532376
+  },
+  {
+    "check": "s3_unbiased_cap40_ztest",
+    "map": "mandel",
+    "cap_small": 40,
+    "budget": 2000000,
+    "n_S0_seeds": 4,
+    "n_S3_seeds": 6,
+    "n_mask_pixels": 26199,
+    "mask_rule": "study cap-1500 ROI \u2229 (cap-40 S0@8M target > 0)",
+    "target": "S0 @ 8M draws, cap 40 (shared target)",
+    "b_S0_per_seed": [
+      0.01610703079599299,
+      0.01821082306666459,
+      0.01878265333081895,
+      0.013698916400154913
+    ],
+    "b_S0_sd": 0.0023078233902847243,
+    "b_S3_per_seed": [
+      -0.019075950937515858,
+      0.037671590872523995,
+      0.023140052106178463,
+      0.05224978356212619,
+      0.0300256750336998,
+      0.033668018035252475
+    ],
+    "b_S3_mean": 0.02627986144537751,
+    "b_S3_sd": 0.02424802033538006,
+    "z_S3_vs_own_spread": 2.6547425382306518,
+    "verdict_consistent_with_unbiased": true,
+    "E_H_draw": 15.889094929656569
+  },
+  {
+    "check": "s3_unbiased_cap40_ztest",
+    "map": "cosmut",
+    "cap_small": 40,
+    "budget": 2000000,
+    "n_S0_seeds": 4,
+    "n_S3_seeds": 6,
+    "n_mask_pixels": 26220,
+    "mask_rule": "study cap-1500 ROI \u2229 (cap-40 S0@8M target > 0)",
+    "target": "S0 @ 8M draws, cap 40 (shared target)",
+    "b_S0_per_seed": [
+      0.0024852472068174905,
+      0.0016296094325295143,
+      0.00112775486617175,
+      0.0021414199857774465
+    ],
+    "b_S0_sd": 0.0005940288739140953,
+    "b_S3_per_seed": [
+      0.0016204423391104068,
+      0.0031509330346526673,
+      0.00016334819971923628,
+      0.004423647568572556,
+      0.004808650903123142,
+      -0.0008827415654178282
+    ],
+    "b_S3_mean": 0.0022140467466266966,
+    "b_S3_sd": 0.0023082413656491923,
+    "z_S3_vs_own_spread": 2.3495310657771102,
+    "verdict_consistent_with_unbiased": true,
+    "E_H_draw": 17.494315329431736
+  }
+]
