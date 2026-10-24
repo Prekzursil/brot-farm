@@ -61,9 +61,9 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-import conv_samplers as cs
-from analyze import roi_from_ref, rel_stats, signed_mean
-from conv_maps import MAPS
+import conv_samplers as cs  # noqa: E402  (imports follow the sys.path bootstrap above)
+from analyze import roi_from_ref, rel_stats, signed_mean  # noqa: E402
+from conv_maps import MAPS  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
 RES = os.path.join(ROOT, "results")

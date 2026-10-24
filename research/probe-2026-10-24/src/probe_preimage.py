@@ -45,10 +45,9 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-import conv_maps  # noqa: F401  (repo path + study constants)
-import brot_farm as bf
-import conv_samplers as cs
-from analyze import roi_from_ref
+import conv_maps  # noqa: E402,F401  (repo path + study constants)
+import brot_farm as bf  # noqa: E402  (imports follow the sys.path bootstrap above)
+from analyze import roi_from_ref  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
 RES = os.path.join(ROOT, "results")

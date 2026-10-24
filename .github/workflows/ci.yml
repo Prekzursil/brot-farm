@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -59,3 +59,23 @@ jobs:
           python buddhabrot.py render --smoke
           python brot_farm.py --list
           test -f out/buddhabrot_smoke.png && echo "smoke render OK"
+
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Research lab-notebook gate (JSON valid, sentinels present, sources compile)
+        run: python scripts/check_research.py
+
+  ci-green:
+    # aggregate gate for branch protection: one stable context name that
+    # requires every matrix cell above to have passed
+    needs: [site, test, research]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo "all CI jobs green"

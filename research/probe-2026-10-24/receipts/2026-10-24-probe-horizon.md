@@ -181,3 +181,6 @@ per octave.
    `experiments/results/probe_horizon.json`. Run logs live OUTSIDE the
    audited tree (workflow temp dir), per the write-only-new-dated-files rule;
    no existing file in the paper tree or brot-farm was modified.
+
+---
+**2026-10-24 closeout annotation:** lint-only edit to `experiments/src/probe_horizon.py` (E402 noqa markers on the post-bootstrap imports; removal of one unused import / one unused variable). No numeric, protocol, or behavioral change; all measured values in this receipt are untouched. Repo copy under research/probe-2026-10-24/ re-synced and hash-verified.

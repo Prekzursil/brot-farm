@@ -64,10 +64,10 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-import conv_maps  # noqa: F401  (repo path + kernels)
-import conv_samplers as cs
-from conv_maps import CAP_IDS, MAP_IDS, get
-from analyze import ols_slope, rel_stats, roi_from_ref, signed_mean
+import conv_maps  # noqa: E402,F401  (repo path + kernels)
+import conv_samplers as cs  # noqa: E402  (imports follow the sys.path bootstrap above)
+from conv_maps import CAP_IDS, MAP_IDS, get  # noqa: E402
+from analyze import ols_slope, rel_stats, roi_from_ref, signed_mean  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
 RES = os.path.join(ROOT, "results")

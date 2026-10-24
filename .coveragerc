@@ -2,6 +2,8 @@
 # verify_site.py is deliberately NOT in the measured set: it is the E2E
 # site harness (browsers required); the CI 'site' job running it green is its
 # test. Decision recorded in docs/BROWSER-REPAIR.md.
+# scripts/check_research.py is likewise NOT measured: it is the CI lab-notebook
+# gate; the CI 'research' job running it green is its test (same pattern).
 source =
     buddhabrot
     cosbrot
