@@ -25,6 +25,12 @@
 - [ ] **`python scripts/verify_site.py --browsers chromium --origin http`** green,
       and a probe added to it for any new interactive UI
 
+### Research lab notebook (anything under `research/`)
+
+- [ ] **`python scripts/check_research.py`** passes (also run by preflight): results
+      parse and are non-empty, receipts carry the skeleton sentinel in their first
+      5 lines, sources byte-compile
+
 ### Asset versioning (anything under `docs/assets/`)
 
 - [ ] **`python scripts/version_assets.py`** run and the re-stamped `?v=` hashes +

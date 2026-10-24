@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Pre-flight: reproduces every QZP lean-gate lane locally before a push.
+# Pre-flight: reproduces every QZP lean-gate lane locally before a push,
+# plus the CI 'research' job (the lab-notebook gate).
 # Reads the biome pin from the platform workflow at runtime so it can never
 # drift from what CI actually runs.
 set -euo pipefail
@@ -23,4 +24,6 @@ npx --yes "@biomejs/biome@$PIN" format --write docs/assets biome.json
 npx --yes "@biomejs/biome@$PIN" ci --formatter-enabled=true --linter-enabled=false --assist-enabled=false .
 echo "== gate 3: pytest --cov (100% line+branch required) =="
 python -m pytest --cov -q
+echo "== research: lab-notebook gate (CI research job) =="
+python scripts/check_research.py
 echo "PREFLIGHT OK"
