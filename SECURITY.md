@@ -46,7 +46,8 @@ require already-arbitrary code execution on the user's machine.
 
 ## Supply chain
 
-Dependencies are `numpy`, `pillow`, `pytest`, and `pytest-cov` from PyPI,
-pinned by minimum versions in `requirements.txt`; CI installs them on
+Dependencies are `numpy`, `pillow`, `matplotlib`, `pytest`, and `pytest-cov`
+from PyPI, pinned by minimum versions in `requirements.txt`, which also sets a
+security floor for the transitive `pygments`; CI installs them on
 GitHub-hosted runners. Report suspected dependency compromises through the
 same private channel, and via the package's own advisories.

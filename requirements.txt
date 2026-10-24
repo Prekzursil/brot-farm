@@ -3,3 +3,6 @@ pillow>=10.0
 matplotlib>=3.8
 pytest>=7.0
 pytest-cov>=4.0
+# security floor for a transitive dependency (pytest -> pygments): ReDoS
+# advisories PYSEC-2023-117 and PYSEC-2026-2987 are fixed in pygments 2.20.0
+pygments>=2.20.0
