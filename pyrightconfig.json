@@ -5,5 +5,11 @@
   "reportUnknownArgumentType": "none",
   "reportUnknownVariableType": "none",
   "reportUnknownParameterType": "none",
-  "reportMissingImports": "warning"
+  "reportMissingImports": "warning",
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    "research"
+  ]
 }

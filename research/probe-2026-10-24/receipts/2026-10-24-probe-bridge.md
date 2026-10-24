@@ -262,3 +262,6 @@ dust of zero area plus transient resonance).
   machine-lane scale: an even larger forward budget would move the forward halves null DOWN (n^-1/2), i.e.
   widen the ratios, not close them; the cap axis, not the N axis, is the only direction that could move
   the bridge, and 80 -> 1500 moved it by 0.0001 (measured, julia_connected: 1.8953 vs 1.8952).
+
+---
+**2026-10-24 closeout annotation:** lint-only/ruff-format edit to `experiments/src/probe_preimage.py` (E402 noqa markers on the post-bootstrap imports; removal of one unused import / one unused variable). No numeric, protocol, or behavioral change; all measured values in this receipt are untouched. Repo copy under research/probe-2026-10-24/ re-synced and hash-verified; plus np.real/np.imag function forms replacing ndarray.real/.imag attribute access (basedpyright strictness, behavior-identical).

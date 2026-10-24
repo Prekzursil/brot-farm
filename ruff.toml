@@ -1,0 +1,7 @@
+# The research/ tree is an archived pre-publication lab notebook synced from
+# the paper project's experiments/src (source of record — byte-identity is
+# deliberate). Its quality gate is scripts/check_research.py (results parse,
+# receipts carry the skeleton sentinel, sources compile), enforced by the CI
+# 'research' job — not repo lint/style. Keep it out of the ruff surface so the
+# archived copies stay identical to their source of record.
+extend-exclude = ["research"]
