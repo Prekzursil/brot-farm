@@ -24,14 +24,16 @@ def _normalized(path: Path) -> bytes:
 
 
 def asset_hash(path: Path) -> str:
-    return hashlib.sha1(_normalized(path)).hexdigest()[:8]
+    # cache-busting content stamp (?v=<sha1[:8]>), not a security use
+    return hashlib.sha1(_normalized(path), usedforsecurity=False).hexdigest()[:8]
 
 
 def version_docs() -> int:
     changed = 0
     assets = {p.name: p for p in (DOCS / "assets").iterdir() if p.is_file()}
     build = hashlib.sha1(
-        b"".join(sorted(_normalized(p) for p in assets.values()))
+        b"".join(sorted(_normalized(p) for p in assets.values())),
+        usedforsecurity=False,
     ).hexdigest()[:8]
     for html in DOCS.glob("*.html"):
         src = html.read_text(encoding="utf-8")

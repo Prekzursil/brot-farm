@@ -29,10 +29,13 @@ This project ships:
 - **Python code** (`buddhabrot.py`, `cosbrot.py`, `brot_farm.py`, `topup.py`) —
   runs locally on user machines, reads/writes only its own `out/` directory,
   and executes no network calls, no `eval`, and no user-supplied code paths.
-- **A static client-side docs site** (`docs/`) — includes a formula sandbox
-  that compiles **your own** typed expressions via `new Function` in your
-  browser. That sandbox only ever evaluates input you typed yourself, on your
-  machine; it is not a server feature and no data leaves the page.
+- **A static client-side docs site** (`docs/`) — includes a formula sandbox.
+  A formula, whether typed or carried by a shared `#exp=` link, a pin or an
+  imported experiment file, is parsed by a whitelist arithmetic grammar and
+  compiled to closures. It is never evaluated as code (no `eval`, no
+  `new Function`), and the playground writes formula errors and imported
+  names as text, never as HTML. It is not a server feature and no data leaves
+  the page.
 
 In scope: anything in this repository that could crash, corrupt data, or
 execute unintended code when a user runs the documented commands with
@@ -43,7 +46,8 @@ require already-arbitrary code execution on the user's machine.
 
 ## Supply chain
 
-Dependencies are `numpy`, `pillow`, `pytest`, and `pytest-cov` from PyPI,
-pinned by minimum versions in `requirements.txt`; CI installs them on
+Dependencies are `numpy`, `pillow`, `matplotlib`, `pytest`, and `pytest-cov`
+from PyPI, pinned by minimum versions in `requirements.txt`, which also sets a
+security floor for the transitive `pygments`; CI installs them on
 GitHub-hosted runners. Report suspected dependency compromises through the
 same private channel, and via the package's own advisories.

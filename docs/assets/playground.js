@@ -190,21 +190,156 @@ function sha1hex(bytes) {
 }
 
 /* ------------------------------------------------- formula sandbox compile */
-function compileFormula(fxSrc, fySrc) {
-  const names = Object.getOwnPropertyNames(Math).filter((k) => typeof Math[k] === 'function');
-  const wrap = (src) =>
-    new Function('x', 'y', 'cx', 'cy', ...names, `"use strict"; return (${src});`);
-  const fx = wrap(fxSrc),
-    fy = wrap(fySrc);
-  const vals = names.map((k) => Math[k]);
-  const test = (x, y) => {
-    const a = fx(x, y, 0, 0, ...vals),
-      b = fy(x, y, 0, 0, ...vals);
-    return Number.isFinite(a) && Number.isFinite(b);
+// A formula reaches compileFormula from the x′ / y′ boxes and also from data:
+// a shared #exp= link, a pin, an imported experiment file. So it is never run
+// as code (no eval, no new Function). A whitelist arithmetic grammar parses it
+// into closures, and a formula can only name x, y, cx, cy, Math functions and
+// constants (bare or Math.-prefixed: sin, Math.cos, PI), numbers, the
+// operators + - * / % ** and parentheses. Anything else is a parse error.
+const FORMULA_VARS = ['x', 'y', 'cx', 'cy'];
+const FORMULA_VAR_NODES = [(x) => x, (x, y) => y, (x, y, cx) => cx, (x, y, cx, cy) => cy];
+const mathMembers = (type) =>
+  new Map(
+    Object.getOwnPropertyNames(Math)
+      .filter((k) => typeof Math[k] === type)
+      .map((k) => [k, Math[k]]),
+  );
+const FORMULA_FUNCS = mathMembers('function');
+const FORMULA_CONSTS = mathMembers('number');
+const FORMULA_TOKEN =
+  /\s+|(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_]\w*)|(\*\*|[-+*/%(),.])/y;
+const FORMULA_BINARY = {
+  '+': (a, b) => (x, y, cx, cy) => a(x, y, cx, cy) + b(x, y, cx, cy),
+  '-': (a, b) => (x, y, cx, cy) => a(x, y, cx, cy) - b(x, y, cx, cy),
+  '*': (a, b) => (x, y, cx, cy) => a(x, y, cx, cy) * b(x, y, cx, cy),
+  '/': (a, b) => (x, y, cx, cy) => a(x, y, cx, cy) / b(x, y, cx, cy),
+  '%': (a, b) => (x, y, cx, cy) => a(x, y, cx, cy) % b(x, y, cx, cy),
+  '**': (a, b) => (x, y, cx, cy) => a(x, y, cx, cy) ** b(x, y, cx, cy),
+};
+
+// formula source -> (x, y, cx, cy) => number. Grammar, loosest binding first:
+//   sum   := term (('+' | '-') term)*
+//   term  := unary (('*' | '/' | '%') unary)*
+//   unary := ('+' | '-') unary | power
+//   power := atom ('**' unary)?        right-associative; -x**2 is -(x**2)
+//   atom  := number | name | name '(' [sum (',' sum)*] ')' | '(' sum ')'
+function parseFormula(src, label) {
+  const toks = [];
+  FORMULA_TOKEN.lastIndex = 0;
+  while (FORMULA_TOKEN.lastIndex < src.length) {
+    const at = FORMULA_TOKEN.lastIndex;
+    const m = FORMULA_TOKEN.exec(src);
+    if (!m) {
+      const hint = src[at] === '^' ? ' (write powers as x**2)' : '';
+      throw new Error(`${label}: unexpected character "${src[at]}" at position ${at + 1}${hint}`);
+    }
+    if (m[1] !== undefined) toks.push({ kind: 'num', value: Number(m[1]), at });
+    else if (m[2] !== undefined) toks.push({ kind: 'name', value: m[2], at });
+    else if (m[3] !== undefined) toks.push({ kind: m[3], value: m[3], at });
+  }
+  let pos = 0;
+  const peek = (kind) => pos < toks.length && toks[pos].kind === kind;
+  const fail = (what, tok = toks[pos]) => {
+    throw new Error(`${label}: ${what} ${tok ? `at position ${tok.at + 1}` : 'at the end'}`);
   };
+  const expect = (kind) => {
+    if (!peek(kind)) fail(`expected "${kind}"`);
+    return toks[pos++];
+  };
+  function sum() {
+    let node = term();
+    while (peek('+') || peek('-')) node = FORMULA_BINARY[toks[pos++].kind](node, term());
+    return node;
+  }
+  function term() {
+    let node = unary();
+    while (peek('*') || peek('/') || peek('%'))
+      node = FORMULA_BINARY[toks[pos++].kind](node, unary());
+    return node;
+  }
+  function unary() {
+    if (peek('+')) {
+      pos++;
+      return unary();
+    }
+    if (peek('-')) {
+      pos++;
+      const a = unary();
+      return (x, y, cx, cy) => -a(x, y, cx, cy);
+    }
+    return power();
+  }
+  function power() {
+    const base = atom();
+    if (!peek('**')) return base;
+    pos++;
+    return FORMULA_BINARY['**'](base, unary());
+  }
+  function call(fn) {
+    const args = [];
+    if (!peek(')')) {
+      args.push(sum());
+      while (peek(',')) {
+        pos++;
+        args.push(sum());
+      }
+    }
+    expect(')');
+    const [a, b] = args;
+    if (args.length === 1) return (x, y, cx, cy) => fn(a(x, y, cx, cy));
+    if (args.length === 2) return (x, y, cx, cy) => fn(a(x, y, cx, cy), b(x, y, cx, cy));
+    return (x, y, cx, cy) => fn(...args.map((f) => f(x, y, cx, cy)));
+  }
+  function atom() {
+    if (peek('num')) {
+      const v = toks[pos++].value;
+      return () => v;
+    }
+    if (peek('(')) {
+      pos++;
+      const node = sum();
+      expect(')');
+      return node;
+    }
+    if (!peek('name')) fail('expected a number, a name or "("');
+    const tok = toks[pos++];
+    let name = tok.value;
+    const scoped = name === 'Math' && peek('.');
+    if (scoped) {
+      pos++;
+      name = expect('name').value;
+    }
+    if (peek('(')) {
+      const fn = FORMULA_FUNCS.get(name);
+      if (!fn) fail(`unknown function "${name}"`, tok);
+      pos++;
+      return call(fn);
+    }
+    const v = scoped ? -1 : FORMULA_VARS.indexOf(name);
+    if (v >= 0) return FORMULA_VAR_NODES[v];
+    if (FORMULA_CONSTS.has(name)) {
+      const c = FORMULA_CONSTS.get(name);
+      return () => c;
+    }
+    return fail(
+      FORMULA_FUNCS.has(name)
+        ? `"${name}" is a function, call it as ${name}(…)`
+        : `unknown name "${name}"`,
+      tok,
+    );
+  }
+  const node = sum();
+  if (pos < toks.length) fail(`unexpected "${toks[pos].value}"`);
+  return node;
+}
+
+function compileFormula(fxSrc, fySrc) {
+  const fx = parseFormula(String(fxSrc), 'x′'),
+    fy = parseFormula(String(fySrc), 'y′');
+  const test = (x, y) => Number.isFinite(fx(x, y, 0, 0)) && Number.isFinite(fy(x, y, 0, 0));
   if (!test(0.3, 0.2) || !test(-1.2, 0.7)) throw new Error('formula does not evaluate cleanly');
   return {
-    step: (x, y, cx, cy) => [fx(x, y, cx, cy, ...vals), fy(x, y, cx, cy, ...vals)],
+    step: (x, y, cx, cy) => [fx(x, y, cx, cy), fy(x, y, cx, cy)],
     gone: (x, y) => !isFinite(x + y) || x * x + y * y > 1e10 || Math.abs(x) + Math.abs(y) > 1e5,
   };
 }
@@ -221,6 +356,19 @@ function fillSelect(sel, extra) {
 function currentMap(sel) {
   return MAPS[sel.value] || MAPS.mandel;
 }
+// HUDs are built from nodes and never parsed as HTML: formula errors,
+// validation messages and imported names all reach them, so every piece of
+// text goes in as text (strings passed to append/replaceChildren, or a <b>
+// filled through textContent) and stays inert.
+const HUD_ERR = '#d96a6a',
+  HUD_INFO = '#6fc3df';
+function bold(text, color) {
+  const b = document.createElement('b');
+  b.textContent = text;
+  if (color) b.style.color = color;
+  return b;
+}
+const br = () => document.createElement('br');
 
 /* =========================================================== ORBIT THEATER */
 (function () {
@@ -243,6 +391,10 @@ function currentMap(sel) {
     escaped = false;
   let playing = true;
   let bg = null; // prisoner-country layer
+  // feedback line (formula applied / formula error / c received). hudUpdate()
+  // repaints the HUD every frame, so a message written straight into it would
+  // vanish within a frame; it lives here instead until the next reset().
+  let notice = null; // {label, color, text}
   // L4 experiments hooks (read c / custom status; restore a custom formula)
   SHARED.theaterC = () => [c[0], c[1]];
   SHARED.usesCustom = () => custom !== null;
@@ -298,6 +450,11 @@ function currentMap(sel) {
     nIter = 0;
     escaped = false;
     trail = [];
+    notice = null;
+    hudUpdate();
+  }
+  function say(label, color, text = '') {
+    notice = { label, color, text };
     hudUpdate();
   }
 
@@ -315,15 +472,24 @@ function currentMap(sel) {
 
   function hudUpdate() {
     const r = M.hypot(head[0], head[1]);
-    hud.innerHTML =
-      `map <b>${custom ? 'custom formula' : currentMap(mapSel).label}</b><br>` +
-      `c = <b>${c[0].toFixed(4)} ${c[1] < 0 ? '−' : '+'} ${M.abs(c[1]).toFixed(4)}i</b><br>` +
-      `n = <b>${nIter}</b> · z = ${head[0].toFixed(3)} ${head[1] < 0 ? '−' : '+'} ${M.abs(head[1]).toFixed(3)}i · |z| = ${r.toFixed(3)}<br>` +
-      (escaped
-        ? `<b style="color:#d96a6a">escaped after ${nIter} iterations</b>`
+    hud.replaceChildren(
+      ...(notice ? [bold(notice.label, notice.color), notice.text, br()] : []),
+      'map ',
+      bold(custom ? 'custom formula' : currentMap(mapSel).label),
+      br(),
+      'c = ',
+      bold(`${c[0].toFixed(4)} ${c[1] < 0 ? '−' : '+'} ${M.abs(c[1]).toFixed(4)}i`),
+      br(),
+      'n = ',
+      bold(String(nIter)),
+      ` · z = ${head[0].toFixed(3)} ${head[1] < 0 ? '−' : '+'} ${M.abs(head[1]).toFixed(3)}i · |z| = ${r.toFixed(3)}`,
+      br(),
+      escaped
+        ? bold(`escaped after ${nIter} iterations`, HUD_ERR)
         : nIter === 0
           ? 'press play or step'
-          : 'orbit continues…');
+          : 'orbit continues…',
+    );
   }
 
   // ------------------------------------------------------------- rain mode
@@ -392,7 +558,7 @@ function currentMap(sel) {
     const [x0, x1, y0, y1] = win();
     c = [M.max(x0, M.min(x1, e.detail.c[0])), M.max(y0, M.min(y1, e.detail.c[1]))];
     reset();
-    hud.insertAdjacentHTML('beforeend', `<b style="color:#6fc3df">· c received from explorer</b>`);
+    say(`c received from ${e.detail.from || 'explorer'}`, HUD_INFO);
   });
 
   // ------------------------------------------------------------- main loop
@@ -507,15 +673,9 @@ function currentMap(sel) {
       custom = { ...m, win: best || [-3, 3, -3, 3] };
       buildBG();
       reset();
-      hud.insertAdjacentHTML(
-        'afterbegin',
-        `<b style="color:#6fc3df">formula applied</b> · window auto-scouted<br>`,
-      );
+      say('formula applied', HUD_INFO, ' · window auto-scouted');
     } catch (err) {
-      hud.insertAdjacentHTML(
-        'afterbegin',
-        `<b style="color:#d96a6a">formula error:</b> ${err.message}<br>`,
-      );
+      say('formula error:', HUD_ERR, ` ${err.message}`);
     }
   });
 
@@ -651,10 +811,26 @@ function currentMap(sel) {
     stats.maxBin = maxBin;
     ctx.putImageData(img, 0, 0);
     const secs = (performance.now() - t0) / 1000;
-    document.getElementById('mb-hud').innerHTML =
-      `mode <b>${mode === 'anti' ? 'antibuddhabrot (prisoner orbits)' : mode === 'julia' ? `julia-brot · c = ${JULIA_C[0]} + ${JULIA_C[1]}i` : 'buddhabrot (escaping orbits)'}</b> on <b>${currentMap(mapSel).label}</b><br>` +
-      `samples <b>${stats.done.toLocaleString()}</b> · kept ${stats.escaped.toLocaleString()} · plotted ${(stats.plotted / 1e6).toFixed(1)}M points · hottest bin ${maxBin.toLocaleString()}<br>` +
-      `${secs.toFixed(0)}s exposure · ${(stats.done / secs / 1000).toFixed(0)}k samples/s`;
+    document
+      .getElementById('mb-hud')
+      .replaceChildren(
+        'mode ',
+        bold(
+          mode === 'anti'
+            ? 'antibuddhabrot (prisoner orbits)'
+            : mode === 'julia'
+              ? `julia-brot · c = ${JULIA_C[0]} + ${JULIA_C[1]}i`
+              : 'buddhabrot (escaping orbits)',
+        ),
+        ' on ',
+        bold(currentMap(mapSel).label),
+        br(),
+        'samples ',
+        bold(stats.done.toLocaleString()),
+        ` · kept ${stats.escaped.toLocaleString()} · plotted ${(stats.plotted / 1e6).toFixed(1)}M points · hottest bin ${maxBin.toLocaleString()}`,
+        br(),
+        `${secs.toFixed(0)}s exposure · ${(stats.done / secs / 1000).toFixed(0)}k samples/s`,
+      );
     document.getElementById('mb-cap-v').textContent = capEl.value;
     document.getElementById('mb-rate-v').textContent = rateEl.value;
     requestAnimationFrame(render);
@@ -678,11 +854,22 @@ function currentMap(sel) {
   // preset buttons injected for the gallery deep-links
   const presetRow = document.createElement('div');
   presetRow.className = 'controls';
-  presetRow.innerHTML = `
-    <span style="color:var(--muted);font-size:12.5px">presets:</span>
-    <button class="btn" data-mode="escape">buddhabrot</button>
-    <button class="btn" data-mode="anti">antibuddhabrot</button>
-    <button class="btn" data-mode="julia">julia-brot</button>`;
+  const presetLabel = document.createElement('span');
+  presetLabel.style.cssText = 'color:var(--muted);font-size:12.5px';
+  presetLabel.textContent = 'presets:';
+  presetRow.append(presetLabel);
+  for (const [presetMode, text] of [
+    ['escape', 'buddhabrot'],
+    ['anti', 'antibuddhabrot'],
+    ['julia', 'julia-brot'],
+  ]) {
+    const b = Object.assign(document.createElement('button'), {
+      className: 'btn',
+      textContent: text,
+    });
+    b.dataset.mode = presetMode;
+    presetRow.append(b);
+  }
   cv.closest('.panel').insertBefore(presetRow, cv.closest('.grid2'));
   presetRow.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-mode]');
@@ -1008,7 +1195,7 @@ function buildMap(name, grammar) {
         li.appendChild(img);
       }
       const span = document.createElement('span');
-      span.innerHTML = '<b style="color:var(--text)">' + e.name + '</b><br>' + e.formula;
+      span.append(bold(e.name, 'var(--text)'), br(), e.formula);
       li.appendChild(span);
       const btn = document.createElement('button');
       btn.className = 'btn';
@@ -1065,15 +1252,16 @@ function buildMap(name, grammar) {
   let currentGrammar = null;
 
   /* ------------------------------------------------------------- HUD + msg */
-  function hudMsg(html, isErr) {
-    hud.innerHTML =
-      (isErr ? '<b style="color:#d96a6a">' + 'experiment error:</b> ' : '<b>·</b> ') + html;
-  }
-  const esc = (s) =>
-    String(s).replace(
-      /[&<>"']/g,
-      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+  // msg: a string or an array of strings / nodes (e.g. bold(name)); strings
+  // land as text nodes, so validation messages quoting link or file data
+  // cannot inject markup.
+  function hudMsg(msg, isErr) {
+    hud.replaceChildren(
+      isErr ? bold('experiment error:', HUD_ERR) : bold('·'),
+      ' ',
+      ...[msg].flat(),
     );
+  }
 
   /* ------------------------------------------------ grammar lookup + build */
   function grammarFor(key) {
@@ -1437,9 +1625,11 @@ function buildMap(name, grammar) {
       `${rec.name}.aprs.json`,
       new Blob([JSON.stringify(rec, null, 2) + '\n'], { type: 'application/json' }),
     );
-    hudMsg(
-      `APRS <b>${esc(rec.name)}</b> exported · preview ${rec.preview} · validated against the schema v1 field set`,
-    );
+    hudMsg([
+      'APRS ',
+      bold(rec.name),
+      ` exported · preview ${rec.preview} · validated against the schema v1 field set`,
+    ]);
   }
   function loadAprsData(d, where) {
     const v = validateAprs(d, where);
@@ -1472,12 +1662,15 @@ function buildMap(name, grammar) {
     const clamped = [];
     if (cap !== d.caps[1]) clamped.push(`cap ${d.caps[1]}→${cap}`);
     if (Math.abs(gamma - d.gamma) > 1e-9) clamped.push(`γ ${d.gamma}→${gamma}`);
-    hud.innerHTML =
-      `<b>APRS loaded</b> · ${esc(d.name)} · ${esc(`${g.family}:${g.real}/${g.imag} p${g.power}`)}` +
-      ` · caps [${d.caps.join(', ')}] · γ ${d.gamma}${d.preview ? ` · preview ${d.preview}` : ' · no preview'}` +
-      ` · provenance <b>${esc(d.provenance)}</b>` +
+    hud.replaceChildren(
+      bold('APRS loaded'),
+      ` · ${d.name} · ${g.family}:${g.real}/${g.imag} p${g.power}` +
+        ` · caps [${d.caps.join(', ')}] · γ ${d.gamma}${d.preview ? ` · preview ${d.preview}` : ' · no preview'}` +
+        ' · provenance ',
+      bold(d.provenance),
       (clamped.length ? ` · clamped to UI range: ${clamped.join(', ')}` : '') +
-      ' — re-export keeps provenance “imported-bundle”';
+        ' — re-export keeps provenance “imported-bundle”',
+    );
     return true;
   }
 
@@ -1514,6 +1707,7 @@ function buildMap(name, grammar) {
       currentGrammar = grammarFor(st.map || 'mandel');
       label = MAPS[key].label;
     }
+    let rejected = ''; // reported in the closing HUD line, which would overwrite an earlier one
     if (st.fx || st.fy) {
       try {
         const m = compileFormula(st.fx || 'x*x - y*y + cx', st.fy || '2*x*y + cy');
@@ -1522,10 +1716,7 @@ function buildMap(name, grammar) {
         document.getElementById('ot-fy').value = st.fy || '2*x*y + cy';
         label = 'custom formula';
       } catch (err) {
-        hudMsg(
-          `${source}: custom formula rejected (${esc(err.message)}) — map restored without it`,
-          true,
-        );
+        rejected = ` · custom formula rejected (${err.message}), map restored without it`;
       }
     }
     setKnob('mb-cap', st.cap);
@@ -1535,13 +1726,22 @@ function buildMap(name, grammar) {
       const b = document.querySelector(`button[data-mode="${st.mode}"]`);
       if (b) b.click();
     }
-    if (st.c) document.dispatchEvent(new CustomEvent('brot:pick-c', { detail: { c: st.c } }));
+    if (st.c)
+      document.dispatchEvent(
+        new CustomEvent('brot:pick-c', { detail: { c: st.c, from: 'experiment' } }),
+      );
     if (st.seed !== undefined) seedEl.value = String(st.seed);
     writeHash();
     renderSuggestions();
     hudMsg(
-      `${esc(source)} · map <b>${esc(label)}</b> · cap ${st.cap ?? 120} · γ ${st.gamma ?? 1}` +
-        (st.seed !== undefined ? ` · seed ${st.seed}` : ''),
+      [
+        `${source} · map `,
+        bold(label),
+        ` · cap ${st.cap ?? 120} · γ ${st.gamma ?? 1}` +
+          (st.seed !== undefined ? ` · seed ${st.seed}` : '') +
+          rejected,
+      ],
+      rejected !== '',
     );
     return label;
   }
@@ -1845,7 +2045,7 @@ function buildMap(name, grammar) {
         try {
           data = JSON.parse(txt);
         } catch (err) {
-          hudMsg(`${where}: not valid JSON (${esc(err.message)})`, true);
+          hudMsg(`${where}: not valid JSON (${err.message})`, true);
           return;
         }
         if (looksLikeAprs(data)) {
@@ -1887,7 +2087,7 @@ function buildMap(name, grammar) {
         }
         applyState(r.st, `${where} imported`);
       })
-      .catch((err) => hudMsg(`${where}: could not read file (${esc(err.message)})`, true));
+      .catch((err) => hudMsg(`${where}: could not read file (${err.message})`, true));
   }
 
   /* ------------------------------------------------------------- wire up */
@@ -1909,12 +2109,16 @@ function buildMap(name, grammar) {
       },
       'surprise',
     );
-    hud.innerHTML =
-      `<b>surprise</b> · seed <b>${seed}</b> (attempt ${attempt}` +
-      (frac !== null
-        ? `, escape fraction ${frac.toFixed(2)} in band`
-        : ', fallback after 24 tries') +
-      ') — same seed reproduces this map';
+    hud.replaceChildren(
+      bold('surprise'),
+      ' · seed ',
+      bold(String(seed)),
+      ` (attempt ${attempt}` +
+        (frac !== null
+          ? `, escape fraction ${frac.toFixed(2)} in band`
+          : ', fallback after 24 tries') +
+        ') — same seed reproduces this map',
+    );
   });
   document.getElementById('exp-mutate').addEventListener('click', () => {
     const otKey = document.getElementById('ot-map').value;
@@ -1922,7 +2126,7 @@ function buildMap(name, grammar) {
     if (!base) {
       hudMsg(
         'the current map (' +
-          esc(otKey) +
+          otKey +
           ') has no operator grammar — surprise/suggestion maps and grammar-backed stock maps can be mutated',
         true,
       );
@@ -1941,9 +2145,11 @@ function buildMap(name, grammar) {
     currentGrammar = { ...g2 };
     writeHash();
     renderSuggestions();
-    hud.innerHTML =
-      `<b>mutation ${mutateN}</b> · ${esc(describeChange(base, g2))} — side-by-side in the build panel ` +
-      '(left: mutated, right: base); theater/developing room unchanged — register or pin to keep';
+    hud.replaceChildren(
+      bold(`mutation ${mutateN}`),
+      ` · ${describeChange(base, g2)} — side-by-side in the build panel ` +
+        '(left: mutated, right: base); theater/developing room unchanged — register or pin to keep',
+    );
   });
   document.getElementById('exp-resuggest').addEventListener('click', renderSuggestions);
   document.getElementById('exp-pin').addEventListener('click', () => {
@@ -1959,7 +2165,7 @@ function buildMap(name, grammar) {
     r.pins.push({ name, ts: Date.now(), state: st });
     if (writePins(r.pins)) {
       renderPins();
-      hudMsg(`pinned “${esc(name)}” (${r.pins.length} total)`);
+      hudMsg(`pinned “${name}” (${r.pins.length} total)`);
     }
   });
   document.getElementById('exp-share').addEventListener('click', () => {
@@ -2032,7 +2238,7 @@ function buildMap(name, grammar) {
   });
   // APRS bundle export / import (picker; drag-drop goes through importFile)
   document.getElementById('exp-export-aprs').addEventListener('click', () => {
-    exportAprs().catch((err) => hudMsg(`APRS export failed (${esc(err.message)})`, true));
+    exportAprs().catch((err) => hudMsg(`APRS export failed (${err.message})`, true));
   });
   document.getElementById('exp-import-aprs').addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];

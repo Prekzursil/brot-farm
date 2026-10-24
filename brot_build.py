@@ -310,7 +310,9 @@ def aprs_record(
         "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "renderer": "fractal-darkroom",
         "provenance": provenance,
-        "preview": hashlib.sha1(buf.getvalue()).hexdigest()[:8],
+        # APRS v1 content id (sha1[:8] of the preview PNG, docs/adr/0001-aprs.md),
+        # mirrored by the playground's sha1hex: a fingerprint, not a security use
+        "preview": hashlib.sha1(buf.getvalue(), usedforsecurity=False).hexdigest()[:8],
     }
 
 
