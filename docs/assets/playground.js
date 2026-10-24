@@ -391,6 +391,10 @@ const br = () => document.createElement('br');
     escaped = false;
   let playing = true;
   let bg = null; // prisoner-country layer
+  // feedback line (formula applied / formula error / c received). hudUpdate()
+  // repaints the HUD every frame, so a message written straight into it would
+  // vanish within a frame; it lives here instead until the next reset().
+  let notice = null; // {label, color, text}
   // L4 experiments hooks (read c / custom status; restore a custom formula)
   SHARED.theaterC = () => [c[0], c[1]];
   SHARED.usesCustom = () => custom !== null;
@@ -446,6 +450,11 @@ const br = () => document.createElement('br');
     nIter = 0;
     escaped = false;
     trail = [];
+    notice = null;
+    hudUpdate();
+  }
+  function say(label, color, text = '') {
+    notice = { label, color, text };
     hudUpdate();
   }
 
@@ -464,6 +473,7 @@ const br = () => document.createElement('br');
   function hudUpdate() {
     const r = M.hypot(head[0], head[1]);
     hud.replaceChildren(
+      ...(notice ? [bold(notice.label, notice.color), notice.text, br()] : []),
       'map ',
       bold(custom ? 'custom formula' : currentMap(mapSel).label),
       br(),
@@ -548,7 +558,7 @@ const br = () => document.createElement('br');
     const [x0, x1, y0, y1] = win();
     c = [M.max(x0, M.min(x1, e.detail.c[0])), M.max(y0, M.min(y1, e.detail.c[1]))];
     reset();
-    hud.append(bold('· c received from explorer', HUD_INFO));
+    say(`c received from ${e.detail.from || 'explorer'}`, HUD_INFO);
   });
 
   // ------------------------------------------------------------- main loop
@@ -663,9 +673,9 @@ const br = () => document.createElement('br');
       custom = { ...m, win: best || [-3, 3, -3, 3] };
       buildBG();
       reset();
-      hud.prepend(bold('formula applied', HUD_INFO), ' · window auto-scouted', br());
+      say('formula applied', HUD_INFO, ' · window auto-scouted');
     } catch (err) {
-      hud.prepend(bold('formula error:', HUD_ERR), ` ${err.message}`, br());
+      say('formula error:', HUD_ERR, ` ${err.message}`);
     }
   });
 
@@ -1716,7 +1726,10 @@ function buildMap(name, grammar) {
       const b = document.querySelector(`button[data-mode="${st.mode}"]`);
       if (b) b.click();
     }
-    if (st.c) document.dispatchEvent(new CustomEvent('brot:pick-c', { detail: { c: st.c } }));
+    if (st.c)
+      document.dispatchEvent(
+        new CustomEvent('brot:pick-c', { detail: { c: st.c, from: 'experiment' } }),
+      );
     if (st.seed !== undefined) seedEl.value = String(st.seed);
     writeHash();
     renderSuggestions();

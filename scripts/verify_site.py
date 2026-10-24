@@ -365,13 +365,30 @@ def check_page(pg, base: str, page_name: str, mobile: bool) -> None:
                 f"hud={probe_hud[:70]!r} ran={ran} img={markup}",
             )
         pg.evaluate("() => { location.hash = ''; }")
-        # the documented grammar still compiles: bare and Math.-prefixed names
+        # the documented grammar still compiles: bare and Math.-prefixed names.
+        # The HUD repaints every frame, so 350 ms (~20 frames) later the
+        # apply feedback must still be on it, and so must a parse error.
         pg.fill("#ot-fx", "sin(x)*cosh(y) + cx")
         pg.fill("#ot-fy", "Math.cos(x)*sinh(y) + cy")
         pg.click("#ot-apply")
         pg.wait_for_timeout(350)
         ot_hud = (pg.text_content("#ot-hud") or "").replace("\n", " ")
-        record(lane, "formula-grammar", "custom formula" in ot_hud, ot_hud[:60])
+        record(
+            lane,
+            "formula-grammar",
+            "custom formula" in ot_hud and "formula applied" in ot_hud,
+            ot_hud[:60],
+        )
+        pg.fill("#ot-fx", "x^2 + cx")
+        pg.click("#ot-apply")
+        pg.wait_for_timeout(350)
+        ot_err = (pg.text_content("#ot-hud") or "").replace("\n", " ")
+        record(
+            lane,
+            "formula-error-visible",
+            "formula error" in ot_err and "x**2" in ot_err,
+            ot_err[:90],
+        )
     if page_name == "contribute.html":
         # walkthrough page: every screenshot must load (scroll first — they
         # are lazy), and the nav wiring must expose Contribute
